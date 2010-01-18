@@ -10,8 +10,10 @@ TOKENS = (
     ('comment',    r"#.*(?=\n)"),
     ('newline',    r"\n"),
     ('whitespace', r"[\t ]+"),
-    ('semicolon',  r";"),
-    ('keyword',    r"(if|else|fi|do|fa|break|exit|write|writes)"),
+    ('operator',   r"(->|:=|!=|[<>]=|[<>\-?+*/%=])"),
+    ('punc',       r"[;:,\[\]\(\)]"),
+    ('keyword',    r"(if|else|fi|do|fa|break|exit|writes|write)"),
+    ('keyword',    r"(var|true|false|int|read|proc|end)"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
     ('string',     r'"[^"\n]*"'),
@@ -32,38 +34,48 @@ def make_token(typ):
 scanner_tokens = [(regex, make_token(typ)) for typ, regex in TOKENS]
 scanner = Scanner(scanner_tokens)
 
-print scanner.scan(
+source = \
 """
-# bubble sort
+var seive : bool [1000]
+var N, L, cnt : int
 
-var n, t: int
-var a: int[100]
+N := 1000;
+L := N/2;
 
-write "Input length of array (1-100):";
-n := read;
-if (n < 1) + (n > 100) -> write "wrong"; exit; fi
+seive[1] := false;  # one is not prime
 
-n := n - 1;	# set n to last element
+fa i := 2 to 1000 -> seive[i] := true; af
 
-fa i := 0 to n ->
-  writes "Input ";
-  writes i+1;
-  writes ": ";
-  a[i] := read;
+# there is a tighter limit, but this will do
+fa i := 2 to L ->
+   #writes "working on number "; write i;
+
+   fa j := i+1 to N ->
+      if j % i = 0 ->
+      	 # i divides j => j is not prime
+	 seive[j] := false;
+      fi
+   af
 af
 
-fa i := 0 to n-1 ->
-  fa j := i+1 to n ->
-    if a[i] > a[j] ->
-      t := a[i];
-      a[i] := a[j];
-      a[j] := t;
-    fi
-  af
-af
+writes "The prime numbers under "; writes N; write " are:";
+writes "\\t";
 
-write "Sorted list:";
-fa i := 0 to n -> write a[i]; af
-)
+cnt := 0;
+fa i := 2 to N ->
+  if seive[i] -> 
+     writes i; 
+     writes "\\t"; 
+     cnt := cnt + 1; 
+     if cnt > 8 -> 
+       writes "\\n\\t";
+       cnt := 0;
+     fi   
+  fi
+af
+write "";
 """
-)
+
+print source
+print "-" * 80
+print scanner.scan(source)
