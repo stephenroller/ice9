@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 try: 
+    # sre is deprecated in >=python2.5
     from re import Scanner
 except ImportError:
+    # the old way, as on the unity machines
     from sre import Scanner
 
-__all__ = ['parse_source']
-
+__all__ = ['TOKENS', 'lex_source']
 
 # parser handlers
 # in part from http://code.activestate.com/recipes/457664/.
@@ -51,6 +52,7 @@ def lex_source(source):
     scanner_tokens = [(regex, make_token(typ)) for typ, regex in TOKENS]
     scanner = Scanner(scanner_tokens)
     
+    # use python's scanner class to tokenize the input
     tokenized, unused = scanner.scan(source)
     if unused != '':
         lineno = sum(1 for typ,tok in tokenized if typ == 'newline') + 1
@@ -64,6 +66,7 @@ if __name__ == '__main__':
     
     print source
     print "-" * 80
+    
     tokenized = lex_source(source)
     for token in tokenized:
         print token
