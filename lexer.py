@@ -10,10 +10,11 @@ TOKENS = (
     ('comment',    r"#.*(?=\n)"),
     ('newline',    r"\n"),
     ('whitespace', r"[\t ]+"),
-    ('operator',   r"(->|:=|!=|[<>]=|[<>\-?+*/%=])"),
+    ('operator',   r"(->|:=|!=|>=|<=|[<>\-?+*/%=])"),
     ('punc',       r"[;:,\[\]\(\)]"),
-    ('keyword',    r"(if|else|fi|do|fa|break|exit|writes|write)"),
-    ('keyword',    r"(var|true|false|int|read|proc|end)"),
+    ('keyword',    r"(if|fi|else|do|od|false|true|fa|af|to|proc|end|return)"),
+    ('keyword',    r"(var|type|break|exit|forward|writes|write|read)"),
+    ('keyword',    r"(bool,int)"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
     ('string',     r'"[^"\n]*"'),
@@ -78,4 +79,6 @@ write "";
 
 print source
 print "-" * 80
-print scanner.scan(source)
+tokenized, unused = scanner.scan(source)
+for token in tokenized:
+    print token
