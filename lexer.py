@@ -1,7 +1,11 @@
+#!/usr/bin/env python
 try: 
     from re import Scanner
 except ImportError:
     from sre import Scanner
+
+__all__ = ['parse_source']
+
 
 # parser handlers
 # in part from http://code.activestate.com/recipes/457664/.
@@ -22,6 +26,11 @@ TOKENS = (
 )
 
 def make_token(typ):
+    """
+    Used for python's builtin Scanner class. Tokens are passed through
+    filter functions. This builts filter functions that attach the type
+    of regex they matched.
+    """
     # ignore whitespace and comments right away
     if typ == 'whitespace' or typ == 'comment':
         return None
@@ -32,53 +41,29 @@ def make_token(typ):
     
     return _fn
 
-scanner_tokens = [(regex, make_token(typ)) for typ, regex in TOKENS]
-scanner = Scanner(scanner_tokens)
+def lex_source(source):
+    """
+    Lexes the source into ice9 tokens. Returns a list of 
+    (token type, token string) pairs.
+    
+    May raise a ValueError in case of a syntax error.
+    """
+    scanner_tokens = [(regex, make_token(typ)) for typ, regex in TOKENS]
+    scanner = Scanner(scanner_tokens)
+    
+    tokenized, unused = scanner.scan(source)
+    if unused != '':
+        lineno = sum(1 for typ,tok in tokenized if typ == 'newline') + 1
+        raise ValueError('Syntax Error on line ' + str(lineno) + 
+                         '. Got unexpected input "%s".' % unused)
+    
+    return tokenized
 
-source = \
-"""
-var seive : bool [1000]
-var N, L, cnt : int
-
-N := 1000;
-L := N/2;
-
-seive[1] := false;  # one is not prime
-
-fa i := 2 to 1000 -> seive[i] := true; af
-
-# there is a tighter limit, but this will do
-fa i := 2 to L ->
-   #writes "working on number "; write i;
-
-   fa j := i+1 to N ->
-      if j % i = 0 ->
-      	 # i divides j => j is not prime
-	 seive[j] := false;
-      fi
-   af
-af
-
-writes "The prime numbers under "; writes N; write " are:";
-writes "\\t";
-
-cnt := 0;
-fa i := 2 to N ->
-  if seive[i] -> 
-     writes i; 
-     writes "\\t"; 
-     cnt := cnt + 1; 
-     if cnt > 8 -> 
-       writes "\\n\\t";
-       cnt := 0;
-     fi   
-  fi
-af
-write "";
-"""
-
-print source
-print "-" * 80
-tokenized, unused = scanner.scan(source)
-for token in tokenized:
-    print token
+if __name__ == '__main__':
+    source = open('ifact.9.txt').read()
+    
+    print source
+    print "-" * 80
+    tokenized = lex_source(source)
+    for token in tokenized:
+        print token
