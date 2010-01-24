@@ -56,8 +56,8 @@ def lex_source(source):
     tokenized, unused = scanner.scan(source)
     if unused != '':
         lineno = sum(1 for typ,tok in tokenized if typ == 'newline') + 1
-        raise ValueError('Syntax Error on line ' + str(lineno) + 
-                         '. Got unexpected input "%s".' % unused)
+        raise ValueError('line %d: illegal character (%s)' %
+                         (lineno, unused[0]))
     
     return tokenized
 
