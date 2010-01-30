@@ -19,7 +19,7 @@ TOKENS = (
     ('punc',       r"[;:,\[\]\(\)]"),
     ('keyword',    r"(if|fi|else|do|od|false|true|fa|af|to|proc|end|return)"),
     ('keyword',    r"(var|type|break|exit|forward|writes|write|read)"),
-    ('keyword',    r"(bool,int)"),
+    ('keyword',    r"(bool|int)"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
     ('string',     r'"[^"\n]*"'),
