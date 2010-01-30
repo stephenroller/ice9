@@ -1,0 +1,90 @@
+Worked on this grammar with Andrew Austin. Coded independently.
+
+------------------------------------------------------------------------------
+
+program       -> {var|type|forward|proc} stms
+
+id            -> [A-Za-z][A-Za-z0-9_]*
+int           ->  [0-9]+ 
+string        -> "[^"\n]*"
+               | '[^'\n]*'
+
+stms          -> stm { stm } 
+
+stm           -> if | do | fa | 'break' ';' | 'exit' ';'
+               | 'return' ';'
+               | 'write' exp ';' | 'writes' exp ';'
+               | exp ';'
+               | ';' 
+
+if            -> 'if' exp '->' stms { '[]' exp '->' stms } 'fi'
+               | 'if' exp '->' stms { '[]' exp '->' stms } 
+                    '[]' 'else' '->' stms 'fi'
+
+do            -> 'do' exp '->' stms 'od'
+
+fa            -> 'fa' id ':=' exp 'to' exp '->' stms 'af'
+
+proc          -> 'proc' id '(' declist ')'
+                    {type|var} {stms} 'end'
+               | 'proc' id '(' declist ')' ':' typeid 
+                    {type|var} {stms} 'end'
+
+idlist        -> id { ',' id}
+
+var           -> 'var' varlist
+
+varlist       -> idlist ':' typeid { '[' int ']' } { ',' varlist }
+
+forward       -> 'forward' id '(' declist ')'
+               | 'forward' id '(' declist ')' ':' typeid
+
+declist       -> idlist ':' typeid { ',' declist }
+              | ε
+
+type          -> 'type' id  '=' typeid { '[' int ']' }
+
+typeid        -> id
+
+# rules for exp, with precedence added
+
+Expr          -> Low ExprPrime
+ExprPrime     -> = Low ExprPrime
+               | != Low ExprPrime
+               | > Low ExprPrime
+               | < Low ExprPrime
+               | >= Low ExprPrime
+               | <= Low ExprPrime
+               | ε
+
+Low           -> Med LowPrime
+LowPrime      -> + LowPrime
+               | - LowPrime
+               | ε
+
+
+Med           -> High MedPrime
+MedPrime      -> * Factor MedPrime
+               | / Factor MedPrime
+               | % Factor MedPrime
+               | ε
+
+High          -> End HighPrime
+HighPrime     -> '-' Expr
+               | '?' Expr
+               | ε
+
+lvalue        -> id lvaluePrime
+lvaluePrime   -> '[' Expr ']' lValuePrime
+               | ε
+
+End           -> '(' Expr ')'
+               | int
+               | 'true'
+               | 'false'
+               | string
+               | 'read'
+               | id '(' ')'
+               | id '(' Expr { ',' Expr } ')'
+               | lvalue
+               | lvalue ':=' Expr
