@@ -15,12 +15,11 @@ TOKENS = (
     ('comment',    r"#.*(?=\n)"),
     ('newline',    r"\n"),
     ('whitespace', r"[\t ]+"),
-    ('operator',   r":=|!=|>=|<=|[<>\-?+*/%=])"),
+    ('operator',   r"(:=|!=|>=|<=|[<>\-?+*/%=])"),
     ('punc',       r"(\[\]|->)"),
     ('punc',       r"[;:,\[\]\(\)]"),
     ('keyword',    r"(if|fi|else|do|od|false|true|fa|af|to|proc|end|return)"),
-    ('keyword',    r"(var|type|break|exit|forward|writes|write|read)"),
-    ('keyword',    r"(bool|int)"),
+    ('keyword',    r"(var|type|break|exit|forward|writes|write|read|int)"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
     ('string',     r'"[^"\n]*"'),
@@ -60,6 +59,8 @@ def lex_source(source):
         raise ValueError('line %d: illegal character (%s)' %
                          (lineno, unused[0]))
     
+    # and the end of file
+    tokenized.append(('EOF', ''))
     return tokenized
 
 if __name__ == '__main__':
