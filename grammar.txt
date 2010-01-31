@@ -17,9 +17,10 @@ stm           -> if | do | fa
                | ';' 
 
 # It might be easiest to just use two look ahead tokens here.
-if            -> 'if' Expr '->' stms  { '[]' Expr '->' stms } ifPrime
+if            -> 'if' Expr '->' stms ifPrime
                     
 ifPrime       -> '[]' 'else' '->' stms 'fi'
+               | '[]' Expr '->' stms ifPrime
                | 'fi'
 
 do            -> 'do' Expr '->' stms 'od'
@@ -60,15 +61,15 @@ ExprPrime     -> '=' Low ExprPrime
                | ε
 
 Low           -> Med LowPrime
-LowPrime      -> '+' LowPrime
-               | '-' LowPrime
+LowPrime      -> '+' Med LowPrime
+               | '-' Med LowPrime
                | ε
 
 
 Med           -> High MedPrime
-MedPrime      -> '*' Factor MedPrime
-               | '/' Factor MedPrime
-               | '%' Factor MedPrime
+MedPrime      -> '*' High MedPrime
+               | '/' High MedPrime
+               | '%' High MedPrime
                | ε
 
 High          -> End HighPrime
@@ -76,21 +77,24 @@ HighPrime     -> '-' Expr
                | '?' Expr
                | ε
 
-lvalue        -> id lvaluePrime
+# plain ids and arrays
+
 lvaluePrime   -> '[' Expr ']' lValuePrime
                | ε
 
+# highest operator precedence
 End           -> '(' Expr ')'
                | int
                | 'true'
                | 'false'
                | string
                | 'read'
-               | id ProcCall
-               | lvalue ValueOrAssn
+               | id '(' ProcCall
+               | id lvaluePrime ValueOrAssn
 
-ProcCall      -> '(' Expr { ',' Expr } ')'
-               | '(' ')'
+ProcCall      -> Expr { ',' Expr } ')'
+               | ')'
 
+# assignment
 ValueOrAssn   -> ':=' Expr
                | ε
