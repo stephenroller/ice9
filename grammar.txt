@@ -19,9 +19,11 @@ stm           -> if | do | fa
 # It might be easiest to just use two look ahead tokens here.
 if            -> 'if' Expr '->' stms ifPrime
                     
-ifPrime       -> '[]' 'else' '->' stms 'fi'
-               | '[]' Expr '->' stms ifPrime
+ifPrime       -> '[]' ifPrime2 
                | 'fi'
+
+ifPrime2      -> 'else' '->' stms 'fi'
+               | Expr '->' stms ifPrime
 
 do            -> 'do' Expr '->' stms 'od'
 
