@@ -1,34 +1,36 @@
-Worked on this grammar with Andrew Austin. Coded independently.
-
-------------------------------------------------------------------------------
-
 program       -> {var|type|forward|proc} stms
 
 id            -> [A-Za-z][A-Za-z0-9_]*
-int           ->  [0-9]+ 
+int           -> [0-9]+ 
 string        -> "[^"\n]*"
                | '[^'\n]*'
 
 stms          -> stm { stm } 
 
-stm           -> if | do | fa | 'break' ';' | 'exit' ';'
+stm           -> if | do | fa 
+               | 'break' ';' 
+               | 'exit' ';'
                | 'return' ';'
-               | 'write' exp ';' | 'writes' exp ';'
+               | 'write' exp ';'
+               | 'writes' exp ';'
                | exp ';'
                | ';' 
 
-if            -> 'if' exp '->' stms { '[]' exp '->' stms } 'fi'
-               | 'if' exp '->' stms { '[]' exp '->' stms } 
-                    '[]' 'else' '->' stms 'fi'
+# It might be easiest to just use two look ahead tokens here.
+if            -> 'if' Expr '->' stms  { '[]' Expr '->' stms } ifPrime
+                    
+ifPrime       -> '[]' 'else' '->' stms 'fi'
+               | 'fi'
 
-do            -> 'do' exp '->' stms 'od'
+do            -> 'do' Expr '->' stms 'od'
 
-fa            -> 'fa' id ':=' exp 'to' exp '->' stms 'af'
+fa            -> 'fa' id ':=' Expr 'to' Expr '->' stms 'af'
 
-proc          -> 'proc' id '(' declist ')'
-                    {type|var} {stms} 'end'
-               | 'proc' id '(' declist ')' ':' typeid 
-                    {type|var} {stms} 'end'
+proc          -> 'proc' id '(' declist ')' procPrime
+procPrime     -> ':' typeid procEnd
+               | procEnd
+procEnd       -> {type|var} {stms} 'end'
+
 
 idlist        -> id { ',' id}
 
@@ -40,7 +42,7 @@ forward       -> 'forward' id '(' declist ')'
                | 'forward' id '(' declist ')' ':' typeid
 
 declist       -> idlist ':' typeid { ',' declist }
-              | ε
+               | ε
 
 type          -> 'type' id  '=' typeid { '[' int ']' }
 
@@ -49,24 +51,24 @@ typeid        -> id
 # rules for exp, with precedence added
 
 Expr          -> Low ExprPrime
-ExprPrime     -> = Low ExprPrime
-               | != Low ExprPrime
-               | > Low ExprPrime
-               | < Low ExprPrime
-               | >= Low ExprPrime
-               | <= Low ExprPrime
+ExprPrime     -> '=' Low ExprPrime
+               | '!=' Low ExprPrime
+               | '>' Low ExprPrime
+               | '<' Low ExprPrime
+               | '>=' Low ExprPrime
+               | '<=' Low ExprPrime
                | ε
 
 Low           -> Med LowPrime
-LowPrime      -> + LowPrime
-               | - LowPrime
+LowPrime      -> '+' LowPrime
+               | '-' LowPrime
                | ε
 
 
 Med           -> High MedPrime
-MedPrime      -> * Factor MedPrime
-               | / Factor MedPrime
-               | % Factor MedPrime
+MedPrime      -> '*' Factor MedPrime
+               | '/' Factor MedPrime
+               | '%' Factor MedPrime
                | ε
 
 High          -> End HighPrime
@@ -84,7 +86,11 @@ End           -> '(' Expr ')'
                | 'false'
                | string
                | 'read'
-               | id '(' ')'
-               | id '(' Expr { ',' Expr } ')'
-               | lvalue
-               | lvalue ':=' Expr
+               | id ProcCall
+               | lvalue ValueOrAssn
+
+ProcCall      -> '(' Expr { ',' Expr } ')'
+               | '(' ')'
+
+ValueOrAssn   -> ':=' Expr
+               | ε
