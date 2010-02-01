@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 try: 
     # sre is deprecated in >=python2.5
     from re import Scanner
@@ -55,8 +56,9 @@ def lex_source(source):
     tokenized, unused = scanner.scan(source)
     if unused != '':
         lineno = sum(1 for typ,tok in tokenized if typ == 'newline') + 1
-        raise ValueError('line %d: illegal character (%s)' %
+        sys.stderr.write('line %d: illegal character (%s)\n' %
                          (lineno, unused[0]))
+        sys.exit(1)
     
     # mark the start and end of the file
     tokenized.insert(0, ('SOF', 'SOF'))
@@ -64,7 +66,7 @@ def lex_source(source):
     return tokenized
 
 if __name__ == '__main__':
-    source = open('fib.9.txt').read()
+    source = open('bsort.9.txt').read()
     
     print source
     print "-" * 80

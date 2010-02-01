@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+import sys
 from lexer import lex_source
 from tree import Tree
 
 class _SyntaxError(Exception):
     def __init__(self, expected):
         self.expected = expected
-
 
 class TokenStream:
     line = 1
@@ -312,8 +312,9 @@ def parse(source, rule=_program):
     try:
         return rule(stream)
     except _SyntaxError, e:
-        print ("line %d: syntax error near %s" % 
-               (stream.line, stream.current_word()[1]))
+        sys.stderr.write("line %d: syntax error near %s\n" % 
+                         (stream.line, stream.current_word()[1]))
+        sys.exit(2)
         return False
 
 
