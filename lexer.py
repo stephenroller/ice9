@@ -32,7 +32,7 @@ def make_token(typ):
     of regex they matched.
     """
     # ignore whitespace and comments right away
-    if typ == 'whitespace' or typ == 'comment' or typ == 'newline':
+    if typ == 'whitespace' or typ == 'comment':
         return None
     
     # otherwise, return the token type along with the text of the token
