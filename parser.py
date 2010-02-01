@@ -85,14 +85,6 @@ class TokenStream:
                 break
 
 
-def parse(source):
-    stream = TokenStream(lex_source(source))
-    try:
-        return _program(stream)
-    except _SyntaxError, e:
-        print ("line %d: syntax error near %s (%s expected)" % 
-               (stream.line, stream.current_word()[1], e.expected))
-        return False
 
 def _program(stream):
     while _var(stream) or _type(stream) or _forward(stream) or _proc(stream):
@@ -198,7 +190,7 @@ def _varlist(stream):
 
 def _forward(stream):
     firsthalf = (stream.is_next('forward') and 
-                 stream.next_type_is('ident') and
+                 stream.is_next_type('ident') and
                  stream.is_next('(') and 
                  _declist(stream) and 
                  stream.is_next(')'))
@@ -314,6 +306,16 @@ def _ProcCall(stream):
                 return False
         
         return stream.next_is(')')
+
+def parse(source, rule=_program):
+    stream = TokenStream(lex_source(source))
+    try:
+        return rule(stream)
+    except _SyntaxError, e:
+        print ("line %d: syntax error near token '%s' ('%s' expected)" % 
+               (stream.line, stream.current_word()[1], e.expected))
+        return False
+
 
 if __name__ == '__main__':
     source = open('bsort.9.txt').read()
