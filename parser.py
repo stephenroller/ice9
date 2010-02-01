@@ -30,7 +30,7 @@ class TokenStream:
         if type(expected) is tuple and len(expected) == 2:
             return expected == (tokentype, tokenvalue)
         else:
-            return expected == tokenvalue or expected == tokentype
+            return expected == tokenvalue
     
     def is_next(self, expected):
         """
