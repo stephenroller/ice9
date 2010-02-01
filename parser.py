@@ -312,13 +312,11 @@ def parse(source, rule=_program):
     try:
         return rule(stream)
     except _SyntaxError, e:
-        print ("line %d: syntax error near token '%s' ('%s' expected)" % 
-               (stream.line, stream.current_word()[1], e.expected))
+        print ("line %d: syntax error near %s" % 
+               (stream.line, stream.current_word()[1]))
         return False
 
 
 if __name__ == '__main__':
     source = open('bsort.9.txt').read()
-    print source
-    print "-" * 80
-    print parse(source)
+    parse(source)
