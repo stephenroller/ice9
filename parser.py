@@ -85,6 +85,11 @@ class TokenStream:
                 break
 
 
+# Recursive descent parser that (hopefully) implements the grammar.txt file.
+# Andrew Austin and I worked together to transform the grammar in the 
+# spec to the predictive version listed in grammar.txt.
+
+# code is entirely my own.
 
 def _program(stream):
     while _var(stream) or _type(stream) or _forward(stream) or _proc(stream):
