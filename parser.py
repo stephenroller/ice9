@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import sys
+from ice9 import Ice9Error
 from lexer import lex_source
 from tree import Tree
 
-class _SyntaxError(Exception):
-    def __init__(self, expected):
-        self.expected = expected
+class Ice9SyntaxError(Ice9Error):
+    pass
 
 class TokenStream:
     line = 1
@@ -51,7 +51,10 @@ class TokenStream:
         if self.is_next(expected):
             return True
         else:
-            raise _SyntaxError(expected)
+            raise Ice9SyntaxError(
+                self.line, 
+                'syntax error near %s' % self.current_word()[1]
+            )
     
     def next_type_is(self, expected_type):
         """
@@ -61,7 +64,10 @@ class TokenStream:
         if self.is_next_type(expected_type):
             return True
         else:
-            raise _SyntaxError(expected_type)
+            raise Ice9SyntaxError(
+                self.line, 
+                'syntax error near %s' % self.current_word()[1]
+            )
 
     def is_next_type(self, expected_type):
         """
@@ -95,7 +101,7 @@ def _program(stream):
     while _var(stream) or _type(stream) or _forward(stream) or _proc(stream):
         pass
     
-    return _stms(stream) and stream.is_next('EOF')
+    return _stms(stream)
 
 def _stms(stream):
     if not _stm(stream):
@@ -314,15 +320,14 @@ def _ProcCall(stream):
 
 def parse(source, rule=_program):
     stream = TokenStream(lex_source(source))
-    try:
-        return rule(stream)
-    except _SyntaxError, e:
-        sys.stderr.write("line %d: syntax error near %s\n" % 
-                         (stream.line, stream.current_word()[1]))
-        sys.exit(2)
-        return False
+    
+    retval = rule(stream)
+    
+    if not stream.expecting('EOF'):
+        raise Ice9SyntaxError(
+            stream.line, 
+            'syntax error near %s' % stream.current_word()[1]
+        )
+    
+    return retval
 
-
-if __name__ == '__main__':
-    source = open('bsort.9.txt').read()
-    parse(source)

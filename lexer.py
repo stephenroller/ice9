@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from ice9 import Ice9Error
 try: 
     # sre is deprecated in >=python2.5
     from re import Scanner
@@ -7,7 +8,7 @@ except ImportError:
     # the old way, as on the unity machines
     from sre import Scanner
 
-__all__ = ['TOKENS', 'lex_source']
+__all__ = ['TOKENS', 'lex_source', 'Ice9LexicalError']
 
 # parser handlers
 # in part from http://code.activestate.com/recipes/457664/.
@@ -25,6 +26,9 @@ TOKENS = (
     ('string',     r'"[^"\n]*"'),
     ('string',     r"'[^'\n]*'"),
 )
+
+class Ice9LexicalError(Ice9Error):
+    pass
 
 def make_token(typ):
     """
@@ -54,24 +58,13 @@ def lex_source(source):
     
     # use python's scanner class to tokenize the input
     tokenized, unused = scanner.scan(source)
+    
     if unused != '':
+        # unexpected character broke the flow!
         lineno = sum(1 for typ,tok in tokenized if typ == 'newline') + 1
-        sys.stderr.write('line %d: illegal character (%s)\n' %
-                         (lineno, unused[0]))
-        sys.exit(1)
+        raise Ice9LexicalError(lineno, 'illegal character (%s)' % unused[0])
     
     # mark the start and end of the file
     tokenized.insert(0, ('SOF', 'SOF'))
     tokenized.append(('EOF', 'EOF'))
     return tokenized
-
-if __name__ == '__main__':
-    source = open('bsort.9.txt').read()
-    
-    print source
-    print "-" * 80
-    
-    tokenized = lex_source(source)
-    print len(tokenized)
-    for token in tokenized:
-        print token[1]
