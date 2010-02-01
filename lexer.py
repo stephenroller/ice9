@@ -12,14 +12,13 @@ __all__ = ['TOKENS', 'lex_source']
 # in part from http://code.activestate.com/recipes/457664/.
 
 TOKENS = (
-    ('comment',    r"#.*(?=\n)"),
+    ('comment',    r"#.*(?=\n?)"),
     ('newline',    r"\n"),
     ('whitespace', r"[\t ]+"),
-    ('operator',   r"(:=|!=|>=|<=|[<>\-?+*/%=])"),
-    ('punc',       r"(\[\]|->)"),
+    ('operator',   r"(\[\]|->|:=|!=|>=|<=|[<>\-?+*/%=])"),
     ('punc',       r"[;:,\[\]\(\)]"),
-    ('keyword',    r"(if|fi|else|do|od|false|true|fa|af|to|proc|end|return)"),
-    ('keyword',    r"(var|type|break|exit|forward|writes|write|read|int)"),
+    ('keyword',    r"\b(if|fi|else|do|od|false|true|fa|af|to|proc|end|var)\b"),
+    ('keyword',    r"\b(type|break|exit|forward|writes|write|read|return)\b"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
     ('string',     r'"[^"\n]*"'),
@@ -33,7 +32,7 @@ def make_token(typ):
     of regex they matched.
     """
     # ignore whitespace and comments right away
-    if typ == 'whitespace' or typ == 'comment':
+    if typ == 'whitespace' or typ == 'comment' or typ == 'newline':
         return None
     
     # otherwise, return the token type along with the text of the token
@@ -64,11 +63,12 @@ def lex_source(source):
     return tokenized
 
 if __name__ == '__main__':
-    source = open('ifact.9.txt').read()
+    source = open('fib.9.txt').read()
     
     print source
     print "-" * 80
     
     tokenized = lex_source(source)
+    print len(tokenized)
     for token in tokenized:
-        print token
+        print token[1]
