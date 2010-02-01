@@ -58,8 +58,9 @@ def lex_source(source):
         raise ValueError('line %d: illegal character (%s)' %
                          (lineno, unused[0]))
     
-    # and the end of file
-    tokenized.append(('EOF', ''))
+    # mark the start and end of the file
+    tokenized.insert(0, ('SOF', 'SOF'))
+    tokenized.append(('EOF', 'EOF'))
     return tokenized
 
 if __name__ == '__main__':
