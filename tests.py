@@ -17,6 +17,11 @@ def test_parse_true(rule, source):
     
     return TrueTestCase
 
+def test_full_program_file(filename):
+    """
+    Makes a unit test that ensures an entire program is valid
+    """
+    return test_parse_true(program, open(filename).read())
 
 def test_parse_false(rule, source):
     """
@@ -52,13 +57,32 @@ def test_parse_error(rule, source, error_value):
 
 
 # expr tests
-test_number = test_parse_true(expr, '3')
-test_string = test_parse_true(expr, '"string test"')
-test_ident = test_parse_true(expr, 'x')
-test_arithmetic = test_parse_true(expr, 'x / 3 + 2 * (4 % 3) - x')
-test_unary_minus = test_parse_true(expr, '- x')
-test_unary_question = test_parse_true(expr, '? x')
-test_compound_unary = test_parse_true(expr, 'y + - - - x')
+true_number = test_parse_true(expr, '3')
+true_string = test_parse_true(expr, '"string test"')
+true_ident = test_parse_true(expr, 'x')
+true_arithmetic = test_parse_true(expr, 'x / 3 + 2 * (4 % 3) - x')
+true_unary_minus = test_parse_true(expr, '- x')
+true_unary_question = test_parse_true(expr, '? x')
+true_compound_unary = test_parse_true(expr, 'y + - - - x')
+
+false_empty = test_parse_false(expr, '')
+
+se_missing_op = test_parse_error(expr, '3 x', 'syntax error near x')
+se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near EOF')
+se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near EOF')
+se_extra_ident = test_parse_error(expr, '3 + 3 x', 'syntax error near x')
+
+true_empty_statement = test_parse_true(stm, ';')
+false_blank_statement = test_parse_false(stm, '')
+error_blank_statements = test_parse_error(stms, '', 'syntax error near EOF')
+
+# full programs
+test_bsort = test_full_program_file('bsort.9.txt')
+test_dice = test_full_program_file('dice.9.txt')
+test_fact = test_full_program_file('fact.9.txt')
+test_fib = test_full_program_file('fib.9.txt')
+test_ifact = test_full_program_file('ifact.9.txt')
+test_sticks = test_full_program_file('sticks.9.txt')
 
 
 if __name__ == '__main__':
