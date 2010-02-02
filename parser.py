@@ -2,7 +2,6 @@
 import sys
 from ice9 import Ice9Error
 from lexer import lex_source
-from tree import Tree
 
 class Ice9SyntaxError(Ice9Error):
     def __init__(self, token_stream):
