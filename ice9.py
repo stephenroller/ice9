@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 
-
 class Ice9Error(Exception):
     line = 1
     error = ""
@@ -13,7 +12,8 @@ class Ice9Error(Exception):
     def __str__(self):
         return "line %d: %s" % (self.line, str(self.error))
 
-def main(args):
+
+def main(*args):
     from parser import parse
     from parser import Ice9SyntaxError
     from lexer import Ice9LexicalError
@@ -35,8 +35,8 @@ def main(args):
             raise Ice9Error(0, 'invalid input')
     except (Ice9Error, Ice9SyntaxError, Ice9LexicalError), e:
         # but if there's an error, print it out and exit.
-        sys.stderr.write(str(e))
+        sys.stderr.write(str(e) + "\n")
         sys.exit(1)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])

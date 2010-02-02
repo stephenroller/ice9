@@ -16,7 +16,7 @@ class TokenStream:
     def __init__(self, token_stream):
         self.stream = token_stream
         # remove the SOF token
-        self.next()
+        self.next_type_is('SOF')
     
     def current_word(self):
         if self.stream is None or len(self.stream) == 0:
@@ -360,5 +360,5 @@ def proc_call(stream):
 
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
-    return rule(stream) and stream.next_is('EOF')
+    return rule(stream) and stream.next_type_is('EOF')
 

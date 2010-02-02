@@ -1,4 +1,6 @@
 import unittest
+import ice9
+from StringIO import StringIO
 from ice9 import Ice9Error
 from lexer import lex_source, Ice9LexicalError
 from parser import *
@@ -51,9 +53,33 @@ def test_parse_error(rule, source, error_value):
                 # We should throw an error!
                 assert False, 'No error thrown'
             except (Ice9Error, Ice9LexicalError, Ice9SyntaxError), e:
-                assert e.error == error_value
+                assert e.error == error_value, "output '%s' != expected '%s'" % \
+                                                (error_value, e.error)
     
     return SyntaxErrorTestCase
+
+def make_community_test(test_id):
+    """
+    Makes a unit test that runs a community test.
+    """
+    class CommunityTest(unittest.TestCase):
+        def __str__(self):
+            return '(community test %d)' % test_id
+        
+        def runTest(self):
+            fakestderr = StringIO()
+            realstderr, sys.stderr = sys.stderr, fakestderr
+            try:
+                ice9.main('community_tests/tests/test%d.9' % test_id)
+            except SystemExit:
+                pass
+            sys.stderr = realstderr
+            out = fakestderr.getvalue()
+            expected = file('community_tests/expected/test%d.out' % test_id).read()
+            assert out == expected, "output '%s' != expected '%s'" % (out, expected)
+    
+    return CommunityTest
+                
 
 # some lexer tests
 lexerr_illegal_character = test_parse_error(program, '@', 'illegal character (@)')
@@ -77,14 +103,14 @@ false_empty = test_parse_false(expr, '')
 false_blank_statement = test_parse_false(stm, '')
 
 se_missing_op = test_parse_error(expr, '3 x', 'syntax error near x')
-se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near EOF')
-se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near EOF')
+se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near ')
+se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near ')
 se_extra_ident = test_parse_error(expr, '3 + 3 x', 'syntax error near x')
-se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near EOF')
+se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near ')
 
 # stm tests
 true_empty_statement = test_parse_true(stm, ';')
-se_blank_statements = test_parse_error(stms, '', 'syntax error near EOF')
+se_blank_statements = test_parse_error(stms, '', 'syntax error near ')
 
 # if, fa, do
 true_if = test_parse_true(ice9_if, 'if true -> write "hello world" ; fi')
@@ -92,10 +118,10 @@ true_if_else = test_parse_true(ice9_if, 'if true -> 3 ; [] else -> 5 ; fi')
 true_if_if_else = test_parse_true(ice9_if, 'if true -> 1 ; [] false -> 2 ; fi')
 true_if_if_else_else = test_parse_true(ice9_if, 'if true -> 2 ; [] false -> ; [] else -> ; fi')
 
-se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near EOF')
-se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near EOF')
-se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near EOF')
-se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near EOF')
+se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near ')
+se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near ')
+se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near ')
+se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near ')
 
 # full programs
 test_bsort = test_full_program_file('examples/bsort.9.txt')
@@ -105,6 +131,9 @@ test_fib = test_full_program_file('examples/fib.9.txt')
 test_ifact = test_full_program_file('examples/ifact.9.txt')
 test_sticks = test_full_program_file('examples/sticks.9.txt')
 
+for i in xrange(1, 177):
+    # Load all the community tests
+    globals()['community_test_%d' % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()
