@@ -251,13 +251,12 @@ def dec_list(stream):
 
 @grammar_rule
 def ice9_type(stream):
-    firsthalf = (stream.is_next('type') and 
-                 stream.next_type_is('ident') and
-                 stream.is_next('=') and
-                 type_id(stream, True))
-    
-    if not firsthalf:
+    if not stream.is_next('type'):
         return False
+        
+    stream.next_type_is('ident')
+    stream.next_is('=')
+    type_id(stream, True)
     
     while stream.is_next('['):
         if not (stream.next_type_is('int') and 
