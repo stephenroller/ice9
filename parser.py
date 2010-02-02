@@ -5,7 +5,10 @@ from lexer import lex_source
 from tree import Tree
 
 class Ice9SyntaxError(Ice9Error):
-    pass
+    def __init__(self, token_stream):
+        self.line = token_stream.line
+        self.error = 'syntax error near %s' % token_stream.current_word()[1]
+
 
 class TokenStream:
     line = 1
@@ -51,10 +54,7 @@ class TokenStream:
         if self.is_next(expected):
             return True
         else:
-            raise Ice9SyntaxError(
-                self.line, 
-                'syntax error near %s' % self.current_word()[1]
-            )
+            raise Ice9SyntaxError(self)
     
     def next_type_is(self, expected_type):
         """
@@ -64,10 +64,7 @@ class TokenStream:
         if self.is_next_type(expected_type):
             return True
         else:
-            raise Ice9SyntaxError(
-                self.line, 
-                'syntax error near %s' % self.current_word()[1]
-            )
+            raise Ice9SyntaxError(self)
 
     def is_next_type(self, expected_type):
         """
@@ -105,7 +102,7 @@ def _program(stream):
 
 def _stms(stream):
     if not _stm(stream):
-        return False
+        raise Ice9SyntaxError(stream)
     
     while _stm(stream):
         pass
@@ -123,8 +120,12 @@ def _stm(stream):
             stream.is_next(';'))
 
 def _if(stream):
-    return (stream.is_next('if') and _Expr(stream) and 
-            stream.next_is('->') and _stms(stream) and _ifPrime(stream))
+    if stream.is_next('if'):
+        if (_Expr(stream) and stream.next_is('->') and 
+            _stms(stream) and _ifPrime(stream)):
+                return True
+        else:
+                raise Ice9SyntaxError(stream)
 
 def _ifPrime(stream):
     if stream.is_next('[]'):
@@ -200,14 +201,14 @@ def _varlist(stream):
     return True
 
 def _forward(stream):
-    firsthalf = (stream.is_next('forward') and 
-                 stream.is_next_type('ident') and
-                 stream.is_next('(') and 
-                 _declist(stream) and 
-                 stream.is_next(')'))
-    
-    if not firsthalf:
+    if not stream.is_next('forward'):
         return False
+    
+    if not (stream.next_type_is('ident') and
+            stream.next_is('(') and 
+            _declist(stream) and 
+            stream.next_is(')')):
+                raise Ice9SyntaxError(stream)
     
     if stream.is_next(':'):
         return _typeid(stream)
@@ -324,10 +325,7 @@ def parse(source, rule=_program):
     retval = rule(stream)
     
     if not stream.expecting('EOF'):
-        raise Ice9SyntaxError(
-            stream.line, 
-            'syntax error near %s' % stream.current_word()[1]
-        )
+        raise Ice9SyntaxError(stream)
     
     return retval
 
