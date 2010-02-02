@@ -94,12 +94,29 @@ class TokenStream:
 
 # code is entirely my own.
 
+# voodo python magic here to add an extra parameter to all my grammar
+# rules via a sneaky decorator
+def grammar_rule(rule):
+    # adds an optional "mandatory" paramater to rules so they throw a
+    # syntax error if it doesn't work out
+    def modified_rule(stream, mandatory=False):
+        retval = rule(stream)
+        if mandatory and not retval:
+            raise Ice9SyntaxError(stream)
+        else:
+            return retval
+    
+    modified_rule.func_name = rule.func_name
+    return modified_rule
+
+@grammar_rule
 def program(stream):
     while var(stream) or ice9_type(stream) or forward(stream) or proc(stream):
         pass
     
     return stms(stream)
 
+@grammar_rule
 def stms(stream):
     if not stm(stream):
         raise Ice9SyntaxError(stream)
@@ -109,6 +126,7 @@ def stms(stream):
     
     return True
 
+@grammar_rule
 def stm(stream):
     return (ice9_if(stream) or ice9_do(stream) or fa(stream) or
             (stream.is_next('break') and stream.next_is(';')) or
@@ -119,6 +137,7 @@ def stm(stream):
             (expr(stream) and stream.next_is(';')) or
             stream.is_next(';'))
 
+@grammar_rule
 def ice9_if(stream):
     if stream.is_next('if'):
         if (expr(stream) and stream.next_is('->') and 
@@ -127,12 +146,14 @@ def ice9_if(stream):
         else:
                 raise Ice9SyntaxError(stream)
 
+@grammar_rule
 def if_prime(stream):
     if stream.is_next('[]'):
         return fi(stream)
     else:
         return stream.next_is('fi')
 
+@grammar_rule
 def fi(stream):
     if stream.is_next('else'):
         return (stream.next_is('->') and stms(stream) and 
@@ -141,10 +162,12 @@ def fi(stream):
         return (expr(stream) and stream.next_is('->') and stms(stream) and
                 if_prime(stream))
 
+@grammar_rule
 def ice9_do(stream):
     return (stream.is_next('do') and expr(stream) and 
             stream.next_is('->') and stms(stream) and stream.next_is('od'))
 
+@grammar_rule
 def fa(stream):
     return (stream.is_next('fa') and stream.nextice9_type_is('ident') and
             stream.next_is(':=') and expr(stream) and 
@@ -156,12 +179,14 @@ def proc(stream):
             stream.next_is('(') and dec_list(stream) and 
             stream.next_is(')') and proc_prime(stream))
 
+@grammar_rule
 def proc_prime(stream):
     if stream.is_next(':'):
         return type_id(stream) and proc_end(stream)
     else:
         return proc_end(stream)
 
+@grammar_rule
 def proc_end(stream):
     while ice9_type(stream) or var(stream):
         pass
@@ -171,6 +196,7 @@ def proc_end(stream):
     
     return stream.next_is('end')
 
+@grammar_rule
 def id_list(stream):
     if not stream.is_next_type('ident'):
         return False
@@ -181,9 +207,11 @@ def id_list(stream):
     
     return True
 
+@grammar_rule
 def var(stream):
     return stream.is_next('var') and var_list(stream)
 
+@grammar_rule
 def var_list(stream):
     firsthalf = id_list(stream) and stream.is_next(':') and type_id(stream)
     
@@ -200,6 +228,7 @@ def var_list(stream):
     
     return True
 
+@grammar_rule
 def forward(stream):
     if not stream.is_next('forward'):
         return False
@@ -215,12 +244,14 @@ def forward(stream):
     
     return True
 
+@grammar_rule
 def dec_list(stream):
     if id_list(stream) and stream.next_is(':') and type_id(stream):
         while stream.is_next(','):
             dec_list(stream)
     return True
 
+@grammar_rule
 def ice9_type(stream):
     firsthalf = (stream.is_next('type') and 
                  stream.nextice9_type_is('ident') and
@@ -237,43 +268,50 @@ def ice9_type(stream):
     
     return True
 
+@grammar_rule
 def type_id(stream):
     return stream.nextice9_type_is('ident')
 
+@grammar_rule
 def expr(stream):
     return low(stream) and expr_prime(stream)
 
+@grammar_rule
 def expr_prime(stream):
     for o in ('=', '!=', '>', '<', '>=', '<='):
         if stream.is_next(o):
             return low(stream) and expr_prime(stream)
     return True
 
+@grammar_rule
 def low(stream):
     return med(stream) and low_prime(stream)
 
+@grammar_rule
 def low_prime(stream):
     if stream.is_next('+') or stream.is_next('-'):
         return med(stream) and low_prime(stream)
     return True 
 
+@grammar_rule
 def med(stream):
     return high(stream) and med_prime(stream)
 
+@grammar_rule
 def med_prime(stream):
     for o in ('*', '/', '%'):
         if stream.is_next(o):
             return med(stream) and med_prime(stream)
     return True
 
+@grammar_rule
 def high(stream):
-    return end(stream) and high_prime(stream)
-
-def high_prime(stream):
     if stream.is_next('-') or stream.is_next('?'):
-        return expr(stream)
-    return True
+        return expr(stream, True)
+    else:
+        return end(stream, True)
 
+@grammar_rule
 def end(stream):
     if stream.is_next('('):
         return expr(stream) and stream.next_is(')')
@@ -294,6 +332,7 @@ def end(stream):
     else:
         return False
 
+@grammar_rule
 def lvalue_prime(stream):
     if stream.is_next('['):
         return (expr(stream) and stream.next_is(']') and 
@@ -301,23 +340,24 @@ def lvalue_prime(stream):
     
     return True
 
+@grammar_rule
 def value_or_assignment(stream):
     if stream.is_next(':='):
         return expr(stream)
     return True
 
+@grammar_rule
 def proc_call(stream):
     if stream.is_next(')'):
         return True
     else:
-        if not expr(stream):
-            return False
+        expr(stream, True)
         
         while stream.is_next(','):
-            if not expr(stream):
-                return False
+            expr(stream, True)
         
         return stream.next_is(')')
+
 
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
