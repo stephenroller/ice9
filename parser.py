@@ -118,8 +118,7 @@ def program(stream):
 
 @grammar_rule
 def stms(stream):
-    if not stm(stream):
-        raise Ice9SyntaxError(stream)
+    stm(stream, True)
     
     while stm(stream):
         pass
@@ -132,8 +131,8 @@ def stm(stream):
             (stream.is_next('break') and stream.next_is(';')) or
             (stream.is_next('exit') and stream.next_is(';')) or
             (stream.is_next('return') and stream.next_is(';')) or
-            (stream.is_next('write') and expr(stream) and stream.next_is(';')) or
-            (stream.is_next('writes') and expr(stream) and stream.next_is(';')) or
+            (stream.is_next('write') and expr(stream, True) and stream.next_is(';')) or
+            (stream.is_next('writes') and expr(stream, True) and stream.next_is(';')) or
             (expr(stream) and stream.next_is(';')) or
             stream.is_next(';'))
 
@@ -169,13 +168,13 @@ def ice9_do(stream):
 
 @grammar_rule
 def fa(stream):
-    return (stream.is_next('fa') and stream.nextice9_type_is('ident') and
+    return (stream.is_next('fa') and stream.next_type_is('ident') and
             stream.next_is(':=') and expr(stream) and 
             stream.next_is('to') and expr(stream) and 
             stream.next_is('->') and stms(stream) and stream.next_is('af'))
 
 def proc(stream):
-    return (stream.is_next('proc') and stream.nextice9_type_is('ident') and
+    return (stream.is_next('proc') and stream.next_type_is('ident') and
             stream.next_is('(') and dec_list(stream) and 
             stream.next_is(')') and proc_prime(stream))
 
@@ -202,7 +201,7 @@ def id_list(stream):
         return False
     
     while stream.is_next(','):
-        if not stream.nextice9_type_is('ident'):
+        if not stream.next_type_is('ident'):
             return False
     
     return True
@@ -219,12 +218,11 @@ def var_list(stream):
         return False
     
     while stream.is_next('['):
-        if not (stream.nextice9_type_is('int') and stream.next_is(']')):
+        if not (stream.next_type_is('int') and stream.next_is(']')):
             return False
     
     while stream.is_next(','):
-        if not var_list(stream):
-            return False
+        var_list(stream, True)
     
     return True
 
@@ -233,36 +231,37 @@ def forward(stream):
     if not stream.is_next('forward'):
         return False
     
-    if not (stream.nextice9_type_is('ident') and
+    if not (stream.next_type_is('ident') and
             stream.next_is('(') and 
-            dec_list(stream) and 
+            dec_list(stream, True) and 
             stream.next_is(')')):
                 raise Ice9SyntaxError(stream)
     
     if stream.is_next(':'):
-        return type_id(stream)
+        return type_id(stream, True)
     
     return True
 
 @grammar_rule
 def dec_list(stream):
-    if id_list(stream) and stream.next_is(':') and type_id(stream):
+    if id_list(stream) and stream.next_is(':') and type_id(stream, True):
         while stream.is_next(','):
-            dec_list(stream)
+            dec_list(stream, True)
+    
     return True
 
 @grammar_rule
 def ice9_type(stream):
     firsthalf = (stream.is_next('type') and 
-                 stream.nextice9_type_is('ident') and
+                 stream.next_type_is('ident') and
                  stream.is_next('=') and
-                 type_id(stream))
+                 type_id(stream, True))
     
     if not firsthalf:
         return False
     
     while stream.is_next('['):
-        if not (stream.nextice9_type_is('int') and 
+        if not (stream.next_type_is('int') and 
                 stream.next_is(']')):
                     return False
     
@@ -270,7 +269,7 @@ def ice9_type(stream):
 
 @grammar_rule
 def type_id(stream):
-    return stream.nextice9_type_is('ident')
+    return stream.next_type_is('ident')
 
 @grammar_rule
 def expr(stream):
@@ -280,7 +279,7 @@ def expr(stream):
 def expr_prime(stream):
     for o in ('=', '!=', '>', '<', '>=', '<='):
         if stream.is_next(o):
-            return low(stream) and expr_prime(stream)
+            return low(stream, True) and expr_prime(stream)
     return True
 
 @grammar_rule
@@ -290,7 +289,7 @@ def low(stream):
 @grammar_rule
 def low_prime(stream):
     if stream.is_next('+') or stream.is_next('-'):
-        return med(stream) and low_prime(stream)
+        return med(stream, True) and low_prime(stream)
     return True 
 
 @grammar_rule
@@ -301,7 +300,7 @@ def med(stream):
 def med_prime(stream):
     for o in ('*', '/', '%'):
         if stream.is_next(o):
-            return med(stream) and med_prime(stream)
+            return med(stream, True) and med_prime(stream)
     return True
 
 @grammar_rule
@@ -309,12 +308,12 @@ def high(stream):
     if stream.is_next('-') or stream.is_next('?'):
         return expr(stream, True)
     else:
-        return end(stream, True)
+        return end(stream)
 
 @grammar_rule
 def end(stream):
     if stream.is_next('('):
-        return expr(stream) and stream.next_is(')')
+        return expr(stream, True) and stream.next_is(')')
     
     for k in ('true', 'false', 'read'):
         if stream.is_next(k):
@@ -326,24 +325,25 @@ def end(stream):
     
     if stream.is_next_type('ident'):
         if stream.is_next('('):
-            return proc_call(stream)
+            return proc_call(stream, True)
         else:
-            return lvalue_prime(stream) and value_or_assignment(stream)
+            return lvalue_prime(stream, True) and value_or_assignment(stream, True)
     else:
         return False
 
 @grammar_rule
 def lvalue_prime(stream):
     if stream.is_next('['):
-        return (expr(stream) and stream.next_is(']') and 
-                lvalue_prime(stream))
+        return (expr(stream, True) and stream.next_is(']') and 
+                lvalue_prime(stream, True))
     
     return True
 
 @grammar_rule
 def value_or_assignment(stream):
     if stream.is_next(':='):
-        return expr(stream)
+        return expr(stream, True)
+    
     return True
 
 @grammar_rule
@@ -361,11 +361,5 @@ def proc_call(stream):
 
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
-    
-    retval = rule(stream)
-    
-    if not stream.expecting('EOF'):
-        raise Ice9SyntaxError(stream)
-    
-    return retval
+    return rule(stream) and stream.next_is('EOF')
 
