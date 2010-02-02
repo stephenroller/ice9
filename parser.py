@@ -56,23 +56,23 @@ class TokenStream:
         else:
             raise Ice9SyntaxError(self)
     
-    def nextice9_type_is(self, expectedice9_type):
+    def next_type_is(self, expected_type):
         """
         Expects the next type and pushes forward if it's found. Raise a
         syntax error if it isn't.
         """
-        if self.is_next_type(expectedice9_type):
+        if self.is_next_type(expected_type):
             return True
         else:
             raise Ice9SyntaxError(self)
 
-    def is_next_type(self, expectedice9_type):
+    def is_next_type(self, expected_type):
         """
         Checks the next type and pushes forward if it's found. Returns false
         if it isn't.
         """
         tokentype, tokenvalue = self.current_word()
-        if tokentype == expectedice9_type:
+        if tokentype == expected_type:
             self.next()
             return True
         else:
