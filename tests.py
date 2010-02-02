@@ -98,12 +98,12 @@ se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near E
 se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near EOF')
 
 # full programs
-test_bsort = test_full_program_file('bsort.9.txt')
-test_dice = test_full_program_file('dice.9.txt')
-test_fact = test_full_program_file('fact.9.txt')
-test_fib = test_full_program_file('fib.9.txt')
-test_ifact = test_full_program_file('ifact.9.txt')
-test_sticks = test_full_program_file('sticks.9.txt')
+test_bsort = test_full_program_file('examples/bsort.9.txt')
+test_dice = test_full_program_file('examples/dice.9.txt')
+test_fact = test_full_program_file('examples/fact.9.txt')
+test_fib = test_full_program_file('examples/fib.9.txt')
+test_ifact = test_full_program_file('examples/ifact.9.txt')
+test_sticks = test_full_program_file('examples/sticks.9.txt')
 
 
 if __name__ == '__main__':
