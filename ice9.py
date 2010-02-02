@@ -9,7 +9,9 @@ class Ice9Error(Exception):
     def __init__(self, line, error):
         self.line = line
         self.error = error
-
+    
+    def __str__(self):
+        return "line %d: %s" % (self.line, str(self.error))
 
 def main(args):
     from parser import parse
@@ -30,10 +32,10 @@ def main(args):
         if parse(source):
             sys.exit(0)
         else:
-            raise Ice9SyntaxError(0, 'unknown syntax error')
+            raise Ice9Error(0, 'invalid input')
     except (Ice9Error, Ice9SyntaxError, Ice9LexicalError), e:
         # but if there's an error, print it out and exit.
-        sys.stderr.write("line %d: %s\n" % (e.line, e.error))
+        sys.stderr.write(str(e))
         sys.exit(1)
 
 if __name__ == '__main__':

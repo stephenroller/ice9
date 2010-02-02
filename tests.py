@@ -44,7 +44,7 @@ def test_parse_error(rule, source, error_value):
             try:
                 parse(source, rule)
                 # We should throw an error!
-                assert False
+                assert False, 'No error thrown'
             except (Ice9Error, Ice9LexicalError, Ice9SyntaxError), e:
                 assert e.error == error_value
     
