@@ -5,4 +5,7 @@ clean:
 	rm -f .coverage && rm -f *.pyc && rm -rf htmlcoverage
 
 test:
-	coverage run tests.py  && coverage report -m && coverage html -d htmlcoverage && open htmlcoverage/index.html
+	python tests.py
+
+coverage: 
+	coverage run tests.py && coverage report -m && coverage html -d htmlcoverage && open htmlcoverage/index.html
