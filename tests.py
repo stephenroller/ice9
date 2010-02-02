@@ -55,6 +55,9 @@ def test_parse_error(rule, source, error_value):
     
     return SyntaxErrorTestCase
 
+# some lexer tests
+lexerr_illegal_character = test_parse_error(program, '@', 'illegal character (@)')
+lexerr_2illegal_characters = test_parse_error(program, '$ @', 'illegal character ($)')
 
 # expr tests
 true_number = test_parse_true(expr, '3')
@@ -65,16 +68,34 @@ true_unary_minus = test_parse_true(expr, '- x')
 true_unary_question = test_parse_true(expr, '? x')
 true_compound_unary = test_parse_true(expr, 'y + - - - x')
 
+true_proc_call = test_parse_true(expr, 'my_call(3, 4, 5)')
+true_proc_call_no_param = test_parse_true(expr, 'my_call()')
+true_array = test_parse_true(expr, 'foobar[1]')
+true_multi_array = test_parse_true(expr, 'foobar[1][i]')
+
 false_empty = test_parse_false(expr, '')
+false_blank_statement = test_parse_false(stm, '')
 
 se_missing_op = test_parse_error(expr, '3 x', 'syntax error near x')
 se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near EOF')
 se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near EOF')
 se_extra_ident = test_parse_error(expr, '3 + 3 x', 'syntax error near x')
+se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near EOF')
 
+# stm tests
 true_empty_statement = test_parse_true(stm, ';')
-false_blank_statement = test_parse_false(stm, '')
-error_blank_statements = test_parse_error(stms, '', 'syntax error near EOF')
+se_blank_statements = test_parse_error(stms, '', 'syntax error near EOF')
+
+# if, fa, do
+true_if = test_parse_true(ice9_if, 'if true -> write "hello world" ; fi')
+true_if_else = test_parse_true(ice9_if, 'if true -> 3 ; [] else -> 5 ; fi')
+true_if_if_else = test_parse_true(ice9_if, 'if true -> 1 ; [] false -> 2 ; fi')
+true_if_if_else_else = test_parse_true(ice9_if, 'if true -> 2 ; [] false -> ; [] else -> ; fi')
+
+se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near EOF')
+se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near EOF')
+se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near EOF')
+se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near EOF')
 
 # full programs
 test_bsort = test_full_program_file('bsort.9.txt')
