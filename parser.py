@@ -56,23 +56,23 @@ class TokenStream:
         else:
             raise Ice9SyntaxError(self)
     
-    def next_type_is(self, expected_type):
+    def nextice9_type_is(self, expectedice9_type):
         """
         Expects the next type and pushes forward if it's found. Raise a
         syntax error if it isn't.
         """
-        if self.is_next_type(expected_type):
+        if self.is_next_type(expectedice9_type):
             return True
         else:
             raise Ice9SyntaxError(self)
 
-    def is_next_type(self, expected_type):
+    def is_next_type(self, expectedice9_type):
         """
         Checks the next type and pushes forward if it's found. Returns false
         if it isn't.
         """
         tokentype, tokenvalue = self.current_word()
-        if tokentype == expected_type:
+        if tokentype == expectedice9_type:
             self.next()
             return True
         else:
@@ -94,189 +94,189 @@ class TokenStream:
 
 # code is entirely my own.
 
-def _program(stream):
-    while _var(stream) or _type(stream) or _forward(stream) or _proc(stream):
+def program(stream):
+    while var(stream) or ice9_type(stream) or forward(stream) or proc(stream):
         pass
     
-    return _stms(stream)
+    return stms(stream)
 
-def _stms(stream):
-    if not _stm(stream):
+def stms(stream):
+    if not stm(stream):
         raise Ice9SyntaxError(stream)
     
-    while _stm(stream):
+    while stm(stream):
         pass
     
     return True
 
-def _stm(stream):
-    return (_if(stream) or _do(stream) or _fa(stream) or
+def stm(stream):
+    return (ice9_if(stream) or ice9_do(stream) or fa(stream) or
             (stream.is_next('break') and stream.next_is(';')) or
             (stream.is_next('exit') and stream.next_is(';')) or
             (stream.is_next('return') and stream.next_is(';')) or
-            (stream.is_next('write') and _Expr(stream) and stream.next_is(';')) or
-            (stream.is_next('writes') and _Expr(stream) and stream.next_is(';')) or
-            (_Expr(stream) and stream.next_is(';')) or
+            (stream.is_next('write') and expr(stream) and stream.next_is(';')) or
+            (stream.is_next('writes') and expr(stream) and stream.next_is(';')) or
+            (expr(stream) and stream.next_is(';')) or
             stream.is_next(';'))
 
-def _if(stream):
+def ice9_if(stream):
     if stream.is_next('if'):
-        if (_Expr(stream) and stream.next_is('->') and 
-            _stms(stream) and _ifPrime(stream)):
+        if (expr(stream) and stream.next_is('->') and 
+            stms(stream) and if_prime(stream)):
                 return True
         else:
                 raise Ice9SyntaxError(stream)
 
-def _ifPrime(stream):
+def if_prime(stream):
     if stream.is_next('[]'):
-        return _fi(stream)
+        return fi(stream)
     else:
         return stream.next_is('fi')
 
-def _fi(stream):
+def fi(stream):
     if stream.is_next('else'):
-        return (stream.next_is('->') and _stms(stream) and 
+        return (stream.next_is('->') and stms(stream) and 
                 stream.next_is('fi'))
     else:
-        return (_Expr(stream) and stream.next_is('->') and _stms(stream) and
-                _ifPrime(stream))
+        return (expr(stream) and stream.next_is('->') and stms(stream) and
+                if_prime(stream))
 
-def _do(stream):
-    return (stream.is_next('do') and _Expr(stream) and 
-            stream.next_is('->') and _stms(stream) and stream.next_is('od'))
+def ice9_do(stream):
+    return (stream.is_next('do') and expr(stream) and 
+            stream.next_is('->') and stms(stream) and stream.next_is('od'))
 
-def _fa(stream):
-    return (stream.is_next('fa') and stream.next_type_is('ident') and
-            stream.next_is(':=') and _Expr(stream) and 
-            stream.next_is('to') and _Expr(stream) and 
-            stream.next_is('->') and _stms(stream) and stream.next_is('af'))
+def fa(stream):
+    return (stream.is_next('fa') and stream.nextice9_type_is('ident') and
+            stream.next_is(':=') and expr(stream) and 
+            stream.next_is('to') and expr(stream) and 
+            stream.next_is('->') and stms(stream) and stream.next_is('af'))
 
-def _proc(stream):
-    return (stream.is_next('proc') and stream.next_type_is('ident') and
-            stream.next_is('(') and _declist(stream) and 
-            stream.next_is(')') and _procPrime(stream))
+def proc(stream):
+    return (stream.is_next('proc') and stream.nextice9_type_is('ident') and
+            stream.next_is('(') and dec_list(stream) and 
+            stream.next_is(')') and proc_prime(stream))
 
-def _procPrime(stream):
+def proc_prime(stream):
     if stream.is_next(':'):
-        return _typeid(stream) and _procEnd(stream)
+        return type_id(stream) and proc_end(stream)
     else:
-        return _procEnd(stream)
+        return proc_end(stream)
 
-def _procEnd(stream):
-    while _type(stream) or _var(stream):
+def proc_end(stream):
+    while ice9_type(stream) or var(stream):
         pass
     
-    while _stm(stream):
+    while stm(stream):
         pass
     
     return stream.next_is('end')
 
-def _idlist(stream):
+def id_list(stream):
     if not stream.is_next_type('ident'):
         return False
     
     while stream.is_next(','):
-        if not stream.next_type_is('ident'):
+        if not stream.nextice9_type_is('ident'):
             return False
     
     return True
 
-def _var(stream):
-    return stream.is_next('var') and _varlist(stream)
+def var(stream):
+    return stream.is_next('var') and var_list(stream)
 
-def _varlist(stream):
-    firsthalf = _idlist(stream) and stream.is_next(':') and _typeid(stream)
+def var_list(stream):
+    firsthalf = id_list(stream) and stream.is_next(':') and type_id(stream)
     
     if not firsthalf:
         return False
     
     while stream.is_next('['):
-        if not (stream.next_type_is('int') and stream.next_is(']')):
+        if not (stream.nextice9_type_is('int') and stream.next_is(']')):
             return False
     
     while stream.is_next(','):
-        if not _varlist(stream):
+        if not var_list(stream):
             return False
     
     return True
 
-def _forward(stream):
+def forward(stream):
     if not stream.is_next('forward'):
         return False
     
-    if not (stream.next_type_is('ident') and
+    if not (stream.nextice9_type_is('ident') and
             stream.next_is('(') and 
-            _declist(stream) and 
+            dec_list(stream) and 
             stream.next_is(')')):
                 raise Ice9SyntaxError(stream)
     
     if stream.is_next(':'):
-        return _typeid(stream)
+        return type_id(stream)
     
     return True
 
-def _declist(stream):
-    if _idlist(stream) and stream.next_is(':') and _typeid(stream):
+def dec_list(stream):
+    if id_list(stream) and stream.next_is(':') and type_id(stream):
         while stream.is_next(','):
-            _declist(stream)
+            dec_list(stream)
     return True
 
-def _type(stream):
+def ice9_type(stream):
     firsthalf = (stream.is_next('type') and 
-                 stream.next_type_is('ident') and
+                 stream.nextice9_type_is('ident') and
                  stream.is_next('=') and
-                 _typeid(stream))
+                 type_id(stream))
     
     if not firsthalf:
         return False
     
     while stream.is_next('['):
-        if not (stream.next_type_is('int') and 
+        if not (stream.nextice9_type_is('int') and 
                 stream.next_is(']')):
                     return False
     
     return True
 
-def _typeid(stream):
-    return stream.next_type_is('ident')
+def type_id(stream):
+    return stream.nextice9_type_is('ident')
 
-def _Expr(stream):
-    return _Low(stream) and _ExprPrime(stream)
+def expr(stream):
+    return low(stream) and expr_prime(stream)
 
-def _ExprPrime(stream):
+def expr_prime(stream):
     for o in ('=', '!=', '>', '<', '>=', '<='):
         if stream.is_next(o):
-            return _Low(stream) and _ExprPrime(stream)
+            return low(stream) and expr_prime(stream)
     return True
 
-def _Low(stream):
-    return _Med(stream) and _LowPrime(stream)
+def low(stream):
+    return med(stream) and low_prime(stream)
 
-def _LowPrime(stream):
+def low_prime(stream):
     if stream.is_next('+') or stream.is_next('-'):
-        return _Med(stream) and _LowPrime(stream)
+        return med(stream) and low_prime(stream)
     return True 
 
-def _Med(stream):
-    return _High(stream) and _MedPrime(stream)
+def med(stream):
+    return high(stream) and med_prime(stream)
 
-def _MedPrime(stream):
+def med_prime(stream):
     for o in ('*', '/', '%'):
         if stream.is_next(o):
-            return _Med(stream) and _MedPrime(stream)
+            return med(stream) and med_prime(stream)
     return True
 
-def _High(stream):
-    return _End(stream) and _HighPrime(stream)
+def high(stream):
+    return end(stream) and high_prime(stream)
 
-def _HighPrime(stream):
+def high_prime(stream):
     if stream.is_next('-') or stream.is_next('?'):
-        return _Expr(stream)
+        return expr(stream)
     return True
 
-def _End(stream):
+def end(stream):
     if stream.is_next('('):
-        return _Expr(stream) and stream.next_is(')')
+        return expr(stream) and stream.next_is(')')
     
     for k in ('true', 'false', 'read'):
         if stream.is_next(k):
@@ -288,38 +288,38 @@ def _End(stream):
     
     if stream.is_next_type('ident'):
         if stream.is_next('('):
-            return _ProcCall(stream)
+            return proc_call(stream)
         else:
-            return _lvaluePrime(stream) and _ValueOrAssn(stream)
+            return lvalue_prime(stream) and value_or_assignment(stream)
     else:
         return False
 
-def _lvaluePrime(stream):
+def lvalue_prime(stream):
     if stream.is_next('['):
-        return (_Expr(stream) and stream.next_is(']') and 
-                _lvaluePrime(stream))
+        return (expr(stream) and stream.next_is(']') and 
+                lvalue_prime(stream))
     
     return True
 
-def _ValueOrAssn(stream):
+def value_or_assignment(stream):
     if stream.is_next(':='):
-        return _Expr(stream)
+        return expr(stream)
     return True
 
-def _ProcCall(stream):
+def proc_call(stream):
     if stream.is_next(')'):
         return True
     else:
-        if not _Expr(stream):
+        if not expr(stream):
             return False
         
         while stream.is_next(','):
-            if not _Expr(stream):
+            if not expr(stream):
                 return False
         
         return stream.next_is(')')
 
-def parse(source, rule=_program):
+def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
     
     retval = rule(stream)
