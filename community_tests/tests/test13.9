@@ -1,0 +1,13 @@
+# 2 vars, 2 types, 2 forwards, 2 procs w/o a statement		fail
+
+var i : int
+var b : bool
+
+type baz = int
+type too = bool[2]
+
+forward foo ()
+forward bar ()
+
+proc foo () end
+proc bar () end

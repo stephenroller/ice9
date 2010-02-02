@@ -1,0 +1,18 @@
+# if exp -> stm [] exp -> stm [] -> stm fi					fail
+
+if 
+true 
+-> 
+; 
+; 
+[] 
+false 
+-> 
+; 
+; 
+[] 
+-> 
+; 
+; 
+fi   
+# missing expr

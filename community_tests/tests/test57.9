@@ -1,0 +1,11 @@
+# if exp -> stms [] else -> stms [] else -> stms fi		fail
+
+if true ->
+	; ;
+[] else ->
+	; ;
+[] else ->
+	; ;
+fi
+
+# two else clauses
