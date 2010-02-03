@@ -65,6 +65,6 @@ def lex_source(source):
         raise Ice9LexicalError(lineno, 'illegal character (%s)' % unused[0])
     
     # mark the start and end of the file
-    tokenized.insert(0, ('SOF', ''))
-    tokenized.append(('EOF', ''))
+    tokenized.insert(0, ('SOF', 'start of file'))
+    tokenized.append(('EOF', 'end of file'))
     return tokenized

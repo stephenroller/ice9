@@ -54,7 +54,7 @@ def test_parse_error(rule, source, error_value):
                 assert False, 'No error thrown'
             except (Ice9Error, Ice9LexicalError, Ice9SyntaxError), e:
                 assert e.error == error_value, "output '%s' != expected '%s'" % \
-                                                (error_value, e.error)
+                                                (e.error, error_value)
     
     return SyntaxErrorTestCase
 
@@ -103,14 +103,14 @@ false_empty = test_parse_false(expr, '')
 false_blank_statement = test_parse_false(stm, '')
 
 se_missing_op = test_parse_error(expr, '3 x', 'syntax error near x')
-se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near ')
-se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near ')
+se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near end of file')
+se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near end of file')
 se_extra_ident = test_parse_error(expr, '3 + 3 x', 'syntax error near x')
-se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near ')
+se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near end of file')
 
 # stm tests
 true_empty_statement = test_parse_true(stm, ';')
-se_blank_statements = test_parse_error(stms, '', 'syntax error near ')
+se_blank_statements = test_parse_error(stms, '', 'syntax error near end of file')
 
 # if, fa, do
 true_if = test_parse_true(ice9_if, 'if true -> write "hello world" ; fi')
@@ -118,10 +118,10 @@ true_if_else = test_parse_true(ice9_if, 'if true -> 3 ; [] else -> 5 ; fi')
 true_if_if_else = test_parse_true(ice9_if, 'if true -> 1 ; [] false -> 2 ; fi')
 true_if_if_else_else = test_parse_true(ice9_if, 'if true -> 2 ; [] false -> ; [] else -> ; fi')
 
-se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near ')
-se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near ')
-se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near ')
-se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near ')
+se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near end of file')
+se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near end of file')
+se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near end of file')
+se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near end of file')
 
 # full programs
 test_bsort = test_full_program_file('examples/bsort.9.txt')
