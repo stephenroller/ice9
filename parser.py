@@ -207,7 +207,7 @@ def id_list(stream):
 
 @grammar_rule
 def var(stream):
-    return stream.is_next('var') and var_list(stream)
+    return stream.is_next('var') and var_list(stream, True)
 
 @grammar_rule
 def var_list(stream):
@@ -217,10 +217,10 @@ def var_list(stream):
         return False
     
     while stream.is_next('['):
-        if not (stream.next_type_is('int') and stream.next_is(']')):
-            return False
+        stream.next_type_is('int')
+        stream.next_is(']')
     
-    while stream.is_next(','):
+    if stream.is_next(','):
         var_list(stream, True)
     
     return True
