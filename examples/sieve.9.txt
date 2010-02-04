@@ -1,0 +1,38 @@
+var seive : bool [1000]
+var N, L, cnt : int
+
+N := 1000;
+L := N/2;
+
+seive[1] := false;  # one is not prime
+
+fa i := 2 to 1000 -> seive[i] := true; af
+
+# there is a tighter limit, but this will do
+fa i := 2 to L ->
+   #writes "working on number "; write i;
+
+   fa j := i+1 to N ->
+      if j % i = 0 ->
+      	 # i divides j => j is not prime
+	 seive[j] := false;
+      fi
+   af
+af
+
+writes "The prime numbers under "; writes N; write " are:";
+writes "\t";
+
+cnt := 0;
+fa i := 2 to N ->
+  if seive[i] -> 
+     writes i; 
+     writes "\t"; 
+     cnt := cnt + 1; 
+     if cnt > 8 -> 
+       writes "\n\t";
+       cnt := 0;
+     fi   
+  fi
+af
+write "";

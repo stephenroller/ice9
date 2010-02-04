@@ -130,6 +130,7 @@ test_fact = test_full_program_file('examples/fact.9.txt')
 test_fib = test_full_program_file('examples/fib.9.txt')
 test_ifact = test_full_program_file('examples/ifact.9.txt')
 test_sticks = test_full_program_file('examples/sticks.9.txt')
+test_sieve = test_full_program_file('examples/sieve.9.txt')
 
 # extra corner cases
 test_comparison = test_parse_true(expr, '8 * (3 - a) < b - 2')
