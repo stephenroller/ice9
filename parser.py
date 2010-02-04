@@ -277,7 +277,7 @@ def expr(stream):
 def expr_prime(stream):
     for o in ('=', '!=', '>', '<', '>=', '<='):
         if stream.is_next(o):
-            return low(stream, True) and expr_prime(stream)
+            return low(stream, True)
     return True
 
 @grammar_rule

@@ -131,6 +131,10 @@ test_fib = test_full_program_file('examples/fib.9.txt')
 test_ifact = test_full_program_file('examples/ifact.9.txt')
 test_sticks = test_full_program_file('examples/sticks.9.txt')
 
+# extra corner cases
+test_comparison = test_parse_true(expr, '8 * (3 - a) < b - 2')
+test_multi_comparison = test_parse_error(expr, 'a < b < c', 'syntax error near <')
+
 for i in xrange(1, 228):
     # Load all the community tests
     globals()['community_test_%d' % i] = make_community_test(i)

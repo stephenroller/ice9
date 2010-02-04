@@ -54,12 +54,12 @@ typeid        -> id
 # rules for exp, with precedence added
 
 Expr          -> Low ExprPrime
-ExprPrime     -> '=' Low ExprPrime
-               | '!=' Low ExprPrime
-               | '>' Low ExprPrime
-               | '<' Low ExprPrime
-               | '>=' Low ExprPrime
-               | '<=' Low ExprPrime
+ExprPrime     -> '=' Low
+               | '!=' Low
+               | '>' Low
+               | '<' Low
+               | '>=' Low
+               | '<=' Low
                | ε
 
 Low           -> Med LowPrime
