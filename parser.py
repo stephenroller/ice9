@@ -2,6 +2,7 @@
 import sys
 from ice9 import Ice9Error
 from lexer import lex_source
+from tree import Tree
 
 class Ice9SyntaxError(Ice9Error):
     def __init__(self, token_stream):
@@ -12,11 +13,25 @@ class Ice9SyntaxError(Ice9Error):
 class TokenStream:
     line = 1
     stream = None
+    ast = Tree()
+    current_node = ast
     
     def __init__(self, token_stream):
         self.stream = token_stream
         # remove the SOF token
         self.next_type_is('SOF')
+    
+    def into_child(self, token):
+        self.current_node = self.current_node.add_child(token=token)
+    
+    def backtrack(self):
+        dead_branch = self.current_node
+        self.current_node = self.current_node.parent
+        dead_branch.kill()
+        return self.current_node
+    
+    def up_to_parent(self):
+        self.current_node = self.current_node.parent
     
     def current_word(self):
         if self.stream is None or len(self.stream) == 0:
@@ -40,6 +55,7 @@ class TokenStream:
         If it isn't, returns false.
         """
         if self.expecting(expected):
+            self.current_node.add_child(token=self.current_word())
             self.next()
             return True
         else:
@@ -72,6 +88,7 @@ class TokenStream:
         """
         tokentype, tokenvalue = self.current_word()
         if tokentype == expected_type:
+            self.current_node.add_child(token=self.current_word())
             self.next()
             return True
         else:
@@ -99,14 +116,21 @@ def grammar_rule(rule):
     # adds an optional "mandatory" paramater to rules so they throw a
     # syntax error if it doesn't work out
     def modified_rule(stream, mandatory=False):
+        stream.into_child(rule)
         retval = rule(stream)
         if mandatory and not retval:
             raise Ice9SyntaxError(stream)
         else:
+            if retval:
+                stream.up_to_parent()
+            else:
+                stream.backtrack()
             return retval
     
     modified_rule.func_name = rule.func_name
     return modified_rule
+
+# here begins the grammar
 
 @grammar_rule
 def program(stream):
@@ -359,5 +383,7 @@ def proc_call(stream):
 
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
-    return rule(stream) and stream.next_type_is('EOF')
+    retval = rule(stream) and stream.next_type_is('EOF')
+    print stream.ast
+    return retval
 
