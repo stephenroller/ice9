@@ -66,11 +66,30 @@ def parse2ast(parse_tree):
                 node.children = node.children[0].children
             
             if len(node.children) == 2:
+                UNARY_OPS = list('?-')
                 BINARY_OPS = list('=+-*/%<>') + ['<=', '>=', '!=', ':=']
+                
+                # Let's check for unary ops
+                if (node.children[0].node_type == 'token' and
+                    node.children[0].value in UNARY_OPS and
+                    node.parent.node_type == 'rule-expansion' and
+                    len(node.parent.children) == 1):
+                        #  node.parent         op
+                        #     |                |
+                        #    node       =>     right
+                        #    /  \
+                        #  op   right
+                        p = node.parent
+                        op = node.children[0].value
+                        p.node_type = 'operator'
+                        p.value = op
+                        p.children = node.children[1:]
+                
                 # let's check for those binary operators
-                if (node.children[0].node_type == 'token' and 
-                    node.children[0].value in BINARY_OPS and
-                    node.parent.node_type == 'rule-expansion'):
+                elif (node.children[0].node_type == 'token' and 
+                      node.children[0].value in BINARY_OPS and
+                      node.parent.node_type == 'rule-expansion' and
+                      len(node.parent.children) == 2):
                         #   node.parent          op                      
                         #     /  \              /  \
                         #  left  node      => left right
