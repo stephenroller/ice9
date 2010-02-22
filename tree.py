@@ -23,20 +23,8 @@ class Tree():
         self.children.append(child)
         return child
 
-    def adopt_grandchildren(self):
-        """
-        Gets rid of all the children and takes all the grandchildren in
-        directly.
-        """
-        print "adoption!"
-        grandchildren = []
-        for child in self.children:
-            grandchildren += child.children
-        self.children = grandchildren
-
-    
     def postfix_iter(self):
-        for child in self.children:
+        for child in self.children.__reversed__():
             for x in child.postfix_iter():
                 yield x
         yield self
@@ -49,8 +37,8 @@ class Tree():
     
     def __str__(self, tab=""):
         out = []
-        out.append(tab + str(getattr(self, 'token', "NULL")))
+        out.append(tab + str(getattr(self, 'value', "NULL")))
         for child in self.children:
-            out.append(child.__str__(tab + "-"))
+            out.append(child.__str__(tab + "- "))
         return "\n".join(out)
 

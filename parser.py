@@ -13,7 +13,7 @@ class Ice9SyntaxError(Ice9Error):
 class TokenStream:
     line = 1
     stream = None
-    ast = Tree()
+    ast = Tree(node_type='root')
     current_node = ast
     
     def __init__(self, token_stream):
@@ -21,8 +21,8 @@ class TokenStream:
         # remove the SOF token
         self.next_type_is('SOF')
     
-    def into_child(self, token):
-        self.current_node = self.current_node.add_child(token=token)
+    def into_child(self, **kwargs):
+        self.current_node = self.current_node.add_child(**kwargs)
     
     def backtrack(self):
         dead_branch = self.current_node
@@ -32,6 +32,30 @@ class TokenStream:
     
     def up_to_parent(self):
         self.current_node = self.current_node.parent
+    
+    def transform_parse_tree(self):
+        """
+        Cleans up the parse tree and turns it into a true AST.
+        """
+        for node in list(self.ast.postfix_iter()):
+            if node.node_type == 'root':
+                pass
+            elif node.node_type == 'token':
+                toktype, tokval = node.value
+                if toktype in ('SOF', 'EOF'):
+                    node.kill()
+            elif node.node_type == 'rule-expansion':
+                if len(node.children) == 0:
+                    node.kill()
+                elif len(node.children) == 1 and node.parent is not None:
+                    # If it's a single expansion, just collapse the node
+                    #  a          a
+                    # / \        / \
+                    # b  c  ==> d   c
+                    # |
+                    # d
+                    node.value = node.children[0].value
+                    node.children = node.children[0].children        
     
     def current_word(self):
         if self.stream is None or len(self.stream) == 0:
@@ -55,7 +79,7 @@ class TokenStream:
         If it isn't, returns false.
         """
         if self.expecting(expected):
-            self.current_node.add_child(token=self.current_word())
+            self.current_node.add_child(node_type='token', value=self.current_word())
             self.next()
             return True
         else:
@@ -88,7 +112,7 @@ class TokenStream:
         """
         tokentype, tokenvalue = self.current_word()
         if tokentype == expected_type:
-            self.current_node.add_child(token=self.current_word())
+            self.current_node.add_child(node_type='token', value=self.current_word())
             self.next()
             return True
         else:
@@ -116,7 +140,7 @@ def grammar_rule(rule):
     # adds an optional "mandatory" paramater to rules so they throw a
     # syntax error if it doesn't work out
     def modified_rule(stream, mandatory=False):
-        stream.into_child(rule)
+        stream.into_child(node_type='rule-expansion', value=rule.func_name)
         retval = rule(stream)
         if mandatory and not retval:
             raise Ice9SyntaxError(stream)
@@ -196,6 +220,7 @@ def fa(stream):
             stream.next_is('to') and expr(stream) and 
             stream.next_is('->') and stms(stream) and stream.next_is('af'))
 
+@grammar_rule
 def proc(stream):
     return (stream.is_next('proc') and stream.next_type_is('ident') and
             stream.next_is('(') and dec_list(stream) and 
@@ -384,6 +409,7 @@ def proc_call(stream):
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
     retval = rule(stream) and stream.next_type_is('EOF')
+    stream.transform_parse_tree()
     print stream.ast
     return retval
 
