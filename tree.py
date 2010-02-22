@@ -15,7 +15,8 @@ class Tree():
         if self.parent is None:
             raise ValueError('root of the tree cannnot die.')
         
-        self.parent.children.remove(self)
+        if self in self.parent.children:
+            self.parent.children.remove(self)
         self.parent = None
 
     def add_child(self, **kwargs):
@@ -37,7 +38,8 @@ class Tree():
     
     def __str__(self, tab=""):
         out = []
-        out.append(tab + str(getattr(self, 'value', "NULL")))
+        out.append(tab + str(getattr(self, 'node_type', "NULL")) + ": " + 
+                  str(getattr(self, 'value', "NULL")))
         for child in self.children:
             out.append(child.__str__(tab + "- "))
         return "\n".join(out)

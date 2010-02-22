@@ -13,7 +13,7 @@ class Ice9SyntaxError(Ice9Error):
 class TokenStream:
     line = 1
     stream = None
-    ast = Tree(node_type='root')
+    ast = Tree(node_type='rule-expansion', value='root')
     current_node = ast
     
     def __init__(self, token_stream):
@@ -32,30 +32,6 @@ class TokenStream:
     
     def up_to_parent(self):
         self.current_node = self.current_node.parent
-    
-    def transform_parse_tree(self):
-        """
-        Cleans up the parse tree and turns it into a true AST.
-        """
-        for node in list(self.ast.postfix_iter()):
-            if node.node_type == 'root':
-                pass
-            elif node.node_type == 'token':
-                toktype, tokval = node.value
-                if toktype in ('SOF', 'EOF'):
-                    node.kill()
-            elif node.node_type == 'rule-expansion':
-                if len(node.children) == 0:
-                    node.kill()
-                elif len(node.children) == 1 and node.parent is not None:
-                    # If it's a single expansion, just collapse the node
-                    #  a          a
-                    # / \        / \
-                    # b  c  ==> d   c
-                    # |
-                    # d
-                    node.value = node.children[0].value
-                    node.children = node.children[0].children        
     
     def current_word(self):
         if self.stream is None or len(self.stream) == 0:
@@ -79,7 +55,8 @@ class TokenStream:
         If it isn't, returns false.
         """
         if self.expecting(expected):
-            self.current_node.add_child(node_type='token', value=self.current_word())
+            toktype, tokval = self.current_word()
+            self.current_node.add_child(node_type='token', value=tokval, token_type=toktype)
             self.next()
             return True
         else:
@@ -112,7 +89,8 @@ class TokenStream:
         """
         tokentype, tokenvalue = self.current_word()
         if tokentype == expected_type:
-            self.current_node.add_child(node_type='token', value=self.current_word())
+            toktyp, tokval = self.current_word()
+            self.current_node.add_child(node_type='token', value=tokval, token_type=toktyp)
             self.next()
             return True
         else:
@@ -409,7 +387,9 @@ def proc_call(stream):
 def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
     retval = rule(stream) and stream.next_type_is('EOF')
-    stream.transform_parse_tree()
+    
+    from ast import parse2ast
+    parse2ast(stream.ast)
     print stream.ast
     return retval
 
