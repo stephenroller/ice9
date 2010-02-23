@@ -29,9 +29,7 @@ def collapsable(rule):
             # b  c  ==> d   c
             # |
             # d
-            node.value = node.children[0].value
-            node.node_type = node.children[0].node_type
-            node.children = node.children[0].children
+            node.become_child()
     
     # make sure we properly emulate the original function
     _modified_rule.func_name = rule.func_name
@@ -39,6 +37,15 @@ def collapsable(rule):
     return _modified_rule
 
 # begin our transformations ------------------------------------------------
+
+# basic rules we just want to collapse if they have a single child. 
+
+@transformation_rule
+@collapsable
+def root(n):
+    # The root node is unnecessary at this point. It should always have a 
+    # program rule underneath it. Let's just collapse it.
+    pass
 
 @transformation_rule
 @collapsable
@@ -65,19 +72,51 @@ def low(n):
 def expr(n):
     pass
 
+# Now for the more complicated rules
+
+UNARY_OPS = list('?-')
+BINARY_OPS = list('=+-*/%<>') + ['<=', '>=', '!=']
+
+# let's go ahead and handle these transformations now
+
+# arrays
 @transformation_rule
-def lvalue_prime(lvalue_prime_node):
-    if len(lvalue_prime_node.children) == 0:
-        # Empty node, just ignore it
-        return
+def lvalue_prime(lvp_node):
+    if lvp_node.parent.value == 'lvalue_prime':
+        # If this is a multidimensional array, just collapse it with the
+        # parent
+        lvp_node.become_child()
+        pass
     else:
-        # the leftmost child will be the "index expression"
-        import pdb
-        pdb.set_trace()
+        # now we're either a singledimensional array, or we've collapsed
+        # all the dimensions into one list. Either way, we need to usurp the
+        # token
+        lvp_node.adopt_left_sibling()
+        lvp_node.node_type = 'array_reference'
 
 @transformation_rule
-def value_or_assignment(v_or_a_node):
-    pass
+def value_or_assignment(va_node):
+    if len(va_node.children) > 0:
+        assignment_token = va_node.children.pop(0)
+        assert assignment_token.value == ':='
+        
+        va_node.parent.children.remove(va_node)
+        va_node.parent.children += va_node.children
+        va_node.parent.node_type = 'assignment'
+        va_node.parent.value = ':='
+
+
+@transformation_rule
+@collapsable
+def if_prime(ifp_node):
+    if ifp_node.children[0].value == '[]':
+        ifp_node.children.pop(0)
+
+@transformation_rule
+def fi(fi_node):
+    # first, let's get rid of that nasty -> token
+    assert fi_node.children[1].value == '->'
+    fi_node.children.pop(1)
 
 @transformation_rule
 def dec_list(dec_list_node):
@@ -113,10 +152,26 @@ def parse2ast(parse_tree):
     """
     for node in list(parse_tree.postfix_iter()):
         if node.node_type == 'token':
-            toktype, tokval = node.token_type, node.value
-            if toktype in ('SOF', 'EOF', 'punc'):
+            if node.token_type in ('SOF', 'EOF', 'punc'):
+                # go ahead and filter unncessary punctuation tokens
                 node.kill()
                 continue
+            
+            elif node.token_type in  ('string', 'int', 'bool'):
+                # it's a literal
+                node.node_type = 'literal'
+                setattr(node, 'ice9_type', node.token_type)
+                
+                if node.ice9_type == 'string':
+                    node.value = node.value[1:-1] # remove the quotes                
+                elif node.ice9_type == 'int':
+                    node.value = int(node.value) 
+                elif node.ice9_type == 'bool':
+                    if node.value == 'true':
+                        node.value = True
+                    elif node.value == 'false':
+                        node.value = False
+                
         elif node.node_type == 'rule-expansion':
             
             if len(node.children) == 0:
@@ -128,8 +183,6 @@ def parse2ast(parse_tree):
                 transform_rules[node.value](node)
             
             elif len(node.children) == 2:
-                UNARY_OPS = list('?-')
-                BINARY_OPS = list('=+-*/%<>') + ['<=', '>=', '!=']
                 
                 # Let's check for unary ops
                 if (node.children[0].node_type == 'token' and

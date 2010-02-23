@@ -23,7 +23,25 @@ class Tree():
         child = Tree(parent=self, **kwargs)
         self.children.append(child)
         return child
-
+    
+    def become_child(self):
+        """
+        Effectively removes the node from the tree by replacing it with its first child.
+        """
+        self.node_type = self.children[0].node_type
+        self.value = self.children[0].value
+        self.children = self.children[0].children
+        for c in self.children:
+            c.parent = self
+    
+    def adopt_left_sibling(self):
+        i = self.parent.children.index(self)
+        # remove the left sibling
+        left_sibling = self.parent.children.pop(i-1)
+        # and move it to the front
+        self.children.insert(0, left_sibling)
+        left_sibling.parent = self
+    
     def postfix_iter(self):
         for child in self.children.__reversed__():
             for x in child.postfix_iter():
