@@ -49,6 +49,11 @@ def root(n):
 
 @transformation_rule
 @collapsable
+def stm(n):
+    pass
+
+@transformation_rule
+@collapsable
 def med(n):
     pass
 
@@ -157,7 +162,7 @@ def parse2ast(parse_tree):
                 node.kill()
                 continue
             
-            elif node.token_type in  ('string', 'int', 'bool'):
+            elif node.token_type in ('string', 'int', 'bool'):
                 # it's a literal
                 node.node_type = 'literal'
                 setattr(node, 'ice9_type', node.token_type)
@@ -171,6 +176,11 @@ def parse2ast(parse_tree):
                         node.value = True
                     elif node.value == 'false':
                         node.value = False
+            
+            elif node.value in ('write', 'writes', 'break'):
+                node.parent.node_type = 'operator'
+                node.parent.value = node.value
+                assert node.parent.children.pop(0) == node
                 
         elif node.node_type == 'rule-expansion':
             
