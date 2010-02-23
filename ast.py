@@ -103,8 +103,7 @@ def lvalue_prime(lvp_node):
 @transformation_rule
 def value_or_assignment(va_node):
     if len(va_node.children) > 0:
-        assignment_token = va_node.children.pop(0)
-        assert assignment_token.value == ':='
+        assert va_node.children.pop(0).value == ':='
         
         va_node.parent.children.remove(va_node)
         va_node.parent.children += va_node.children
@@ -187,6 +186,27 @@ def proc_call(proc_call_node):
     p.value = p.children[0].value
     p.children = proc_call_node.children
 
+@transformation_rule
+def type_id(t_node):
+    t_node.node_type = 'type'
+    t_node.value = t_node.children.pop(0).value
+    assert t_node.children == []
+
+@transformation_rule
+def var(var_node):
+    assert var_node.children.pop(0).value == 'var'
+
+@transformation_rule
+def var_list(vl_node):
+    n = vl_node
+    while n.value != 'var':
+        n = n.parent
+    
+    vl_node.parent.children.remove(vl_node)
+    n.children.append(vl_node)
+    vl_node.parent = n
+
+
 
 # ---------------------------------------------------------------------------
 
@@ -201,7 +221,6 @@ def parse2ast(parse_tree):
             if node.token_type in ('SOF', 'EOF', 'punc'):
                 # go ahead and filter unncessary punctuation tokens
                 node.kill()
-                continue
             
             elif node.token_type in ('string', 'int', 'bool'):
                 # it's a literal
