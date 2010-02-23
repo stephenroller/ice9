@@ -340,11 +340,10 @@ def end(stream):
     if stream.is_next('('):
         return expr(stream, True) and stream.next_is(')')
     
-    for k in ('true', 'false', 'read'):
-        if stream.is_next(k):
-            return True
+    if stream.is_next('read'):
+        return True
     
-    for t in ('int', 'string'):
+    for t in ('int', 'string', 'bool'):
         if stream.is_next_type(t):
             return True
     
