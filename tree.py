@@ -34,6 +34,15 @@ class Tree():
         for c in self.children:
             c.parent = self
     
+    def remove_and_promote(self):
+        """
+        Kills this node and gives its children to its parent.
+        """
+        for c in self.children:
+            c.parent = self.parent
+        self.parent.children += self.children
+        self.parent.children.remove(self)
+    
     def adopt_left_sibling(self):
         i = self.parent.children.index(self)
         # remove the left sibling

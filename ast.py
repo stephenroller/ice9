@@ -110,18 +110,35 @@ def value_or_assignment(va_node):
         va_node.parent.node_type = 'assignment'
         va_node.parent.value = ':='
 
+@transformation_rule
+@collapsable
+def ice9_if(if_node):
+    assert if_node.children.pop(0).value == 'if'
+    assert if_node.children.pop(1).value == '->'
+    assert if_node.children.pop(-1).value == 'fi'
+    if_node.node_type = 'cond'
+    if_node.value = ''
 
 @transformation_rule
 @collapsable
 def if_prime(ifp_node):
     if ifp_node.children[0].value == '[]':
         ifp_node.children.pop(0)
+        ifp_node.remove_and_promote()
 
 @transformation_rule
+@collapsable
 def fi(fi_node):
     # first, let's get rid of that nasty -> token
-    assert fi_node.children[1].value == '->'
-    fi_node.children.pop(1)
+    assert fi_node.children.pop(1).value == '->'
+    
+    if fi_node.children[0].value == 'else':
+        # remove the else
+        fi_node.children.pop(0)
+        pass
+    
+    fi_node.remove_and_promote()
+    
 
 @transformation_rule
 def dec_list(dec_list_node):
