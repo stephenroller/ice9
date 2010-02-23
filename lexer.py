@@ -24,8 +24,8 @@ TOKENS = (
     ('bool',       r"\b(true|false)\b"),
     ('ident',      r"[A-Za-z][A-Za-z0-9_]*"),
     ('int',        r"\d+"),
-    ('string',     r'"[^"\n]*"'),
-    ('string',     r"'[^'\n]*'"),
+    ('str',        r'"[^"\n]*"'),
+    ('str',        r"'[^'\n]*'"),
 )
 
 class Ice9LexicalError(Ice9Error):

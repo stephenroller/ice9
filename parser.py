@@ -343,7 +343,7 @@ def end(stream):
     if stream.is_next('read'):
         return True
     
-    for t in ('int', 'string', 'bool'):
+    for t in ('int', 'str', 'bool'):
         if stream.is_next_type(t):
             return True
     

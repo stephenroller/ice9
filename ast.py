@@ -222,12 +222,12 @@ def parse2ast(parse_tree):
                 # go ahead and filter unncessary punctuation tokens
                 node.kill()
             
-            elif node.token_type in ('string', 'int', 'bool'):
+            elif node.token_type in ('str', 'int', 'bool'):
                 # it's a literal
                 node.node_type = 'literal'
                 setattr(node, 'ice9_type', node.token_type)
                 
-                if node.ice9_type == 'string':
+                if node.ice9_type == 'str':
                     node.value = node.value[1:-1] # remove the quotes                
                 elif node.ice9_type == 'int':
                     node.value = int(node.value) 
