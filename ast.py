@@ -99,6 +99,7 @@ def lvalue_prime(lvp_node):
         lvp_node.adopt_left_sibling()
         lvp_node.node_type = 'array_reference'
 
+# assignment
 @transformation_rule
 def value_or_assignment(va_node):
     if len(va_node.children) > 0:
@@ -110,8 +111,9 @@ def value_or_assignment(va_node):
         va_node.parent.node_type = 'assignment'
         va_node.parent.value = ':='
 
+
+# if / if else / if else if rules
 @transformation_rule
-@collapsable
 def ice9_if(if_node):
     assert if_node.children.pop(0).value == 'if'
     assert if_node.children.pop(1).value == '->'
@@ -138,7 +140,27 @@ def fi(fi_node):
         pass
     
     fi_node.remove_and_promote()
-    
+
+# fa and do
+@transformation_rule
+def fa(fa_node):
+    assert fa_node.children.pop(0).value == 'fa'
+    assert fa_node.children.pop(1).value == ':='
+    assert fa_node.children.pop(2).value == 'to'
+    assert fa_node.children.pop(3).value == '->'
+    assert fa_node.children.pop(-1).value == 'af'
+    fa_node.node_type = 'for_loop'
+    fa_node.value = ''
+
+@transformation_rule
+def ice9_do(do_node):
+    assert do_node.children.pop(0).value == 'do'
+    assert do_node.children.pop(1).value == '->'
+    assert do_node.children.pop(-1).value == 'od'
+    do_node.node_type = 'while_loop'
+    do_node.value = ''
+
+# declaration list
 
 @transformation_rule
 def dec_list(dec_list_node):
@@ -155,6 +177,8 @@ def dec_list(dec_list_node):
                                  ice9_type=variable_type
                                  ))
     dec_list_node.children = new_children
+
+# proc call
 
 @transformation_rule
 def proc_call(proc_call_node):
@@ -194,7 +218,7 @@ def parse2ast(parse_tree):
                     elif node.value == 'false':
                         node.value = False
             
-            elif node.value in ('write', 'writes', 'break'):
+            elif node.value in ('write', 'writes', 'break', 'exit'):
                 node.parent.node_type = 'operator'
                 node.parent.value = node.value
                 assert node.parent.children.pop(0) == node
