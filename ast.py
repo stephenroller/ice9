@@ -218,6 +218,9 @@ def parse2ast(parse_tree):
                     elif node.value == 'false':
                         node.value = False
             
+            elif node.token_type == 'ident':
+                node.node_type = 'ident'
+            
             elif node.value in ('write', 'writes', 'break', 'exit'):
                 node.parent.node_type = 'operator'
                 node.parent.value = node.value
