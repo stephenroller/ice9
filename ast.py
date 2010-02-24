@@ -48,6 +48,11 @@ def root(n):
     pass
 
 @transformation_rule
+def stms(n):
+    n.node_type = 'statements'
+    n.value = ''
+
+@transformation_rule
 @collapsable
 def stm(n):
     pass
