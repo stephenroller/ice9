@@ -200,8 +200,25 @@ def type_id(t_node):
 @transformation_rule
 def var(var_node):
     assert var_node.children.pop(0).value == 'var'
+    var_lists = var_node.children
+    var_node.children = []
+    for vl_node in var_lists:
+        id_list = vl_node.children.pop(0)
+        # type
+        type_info = vl_node.children
+        assert type_info[0].node_type == 'type'
+        vl_node.children = []
+        assert id_list.value == 'id_list'
+        for def_id in id_list.children:
+            assert def_id.node_type == 'ident'
+            var_node.add_child(node_type='define',
+                               value=def_id.value,
+                               children = type_info
+                               )
+    
 
 @transformation_rule
+@collapsable
 def var_list(vl_node):
     n = vl_node
     while n.value != 'var':

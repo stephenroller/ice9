@@ -4,12 +4,13 @@ class Tree():
     """Represents a generic tree."""
     def __init__(self, parent=None, **kwargs):
         self.parent = parent
+        self.children = []
         
         # extra attributes
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
         
-        self.children = []
+        
     
     def kill(self):
         if self.parent is None:
