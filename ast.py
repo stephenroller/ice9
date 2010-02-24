@@ -195,7 +195,16 @@ def proc_call(proc_call_node):
 def type_id(t_node):
     t_node.node_type = 'type'
     t_node.value = t_node.children.pop(0).value
-    assert t_node.children == []
+    siblings = t_node.parent.children
+    myindex = siblings.index(t_node)
+    for right_sibling in list(siblings[myindex+1:]):
+        if (right_sibling.node_type == 'literal' and 
+            right_sibling.ice9_type == 'int'):
+                t_node.children.append(right_sibling)
+                right_sibling.parent = t_node
+                siblings.remove(right_sibling)
+        else:
+            break
 
 @transformation_rule
 def var(var_node):
@@ -215,6 +224,8 @@ def var(var_node):
                                value=def_id.value,
                                children = type_info
                                )
+    
+    var_node.remove_and_promote()
     
 
 @transformation_rule
