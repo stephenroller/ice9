@@ -239,7 +239,25 @@ def var_list(vl_node):
     n.children.append(vl_node)
     vl_node.parent = n
 
+# proc definition
 
+@transformation_rule
+def proc(proc_node):
+    assert proc_node.children.pop(0).value == 'proc'
+    ident = proc_node.children.pop(0)
+    assert ident.node_type == 'ident'
+    proc_node.node_type = 'proc'
+    proc_node.value = ident.value
+    # first child is left as type and second as statements
+
+@transformation_rule
+def proc_prime(pp_node):
+    pp_node.remove_and_promote()
+
+@transformation_rule
+def proc_end(pe_node):
+    pe_node.node_type = 'statements'
+    pe_node.value = ''
 
 # ---------------------------------------------------------------------------
 
