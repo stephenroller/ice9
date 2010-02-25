@@ -268,6 +268,7 @@ def proc_prime(pp_node):
 
 @transformation_rule
 def proc_end(pe_node):
+    assert pe_node.children.pop(-1).value == 'end'
     pe_node.node_type = 'statements'
     pe_node.value = ''
 
