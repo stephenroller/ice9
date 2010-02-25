@@ -174,19 +174,15 @@ def ice9_do(do_node):
 
 @transformation_rule
 def dec_list(dec_list_node):
-    return
+    if dec_list_node.parent.value != 'dec_list':
+        for c in list(dec_list_node.children):
+            if c.node_type == 'rule-expansion' and c.value == 'id_list':
+                param = c.children[0]
+                param.node_type = 'param'
+                c.remove_and_promote()
+                param.adopt_left_sibling()
     
-    new_children = []
-    while len(dec_list_node.children) > 0:
-        variable_name = dec_list_node.children.pop(0).value
-        variable_type = dec_list_node.children.pop(0).value
-        
-        new_children.append(Tree(parent=dec_list_node.parent,
-                                 node_type='variable',
-                                 value=variable_name,
-                                 ice9_type=variable_type
-                                 ))
-    dec_list_node.children = new_children
+    dec_list_node.remove_and_promote()
 
 # proc call
 
@@ -211,6 +207,16 @@ def type_id(t_node):
                 siblings.remove(right_sibling)
         else:
             break
+
+@transformation_rule
+def ice9_type(type_node):
+    type_node.node_type = 'define_type'
+
+    assert type_node.children.pop(0).value == 'type'
+    name = type_node.children.pop(0)
+    assert name.node_type == 'ident'
+    type_node.value = name.value
+    assert type_node.children.pop(0).value == '='
 
 @transformation_rule
 def var(var_node):
