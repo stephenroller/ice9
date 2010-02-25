@@ -109,6 +109,8 @@ def lvalue_prime(lvp_node):
         # token
         lvp_node.adopt_left_sibling()
         lvp_node.node_type = 'array_reference'
+        name = lvp_node.children.pop(0)
+        lvp_node.value = name.value
 
 # assignment
 @transformation_rule
