@@ -48,11 +48,6 @@ def root(n):
     pass
 
 @transformation_rule
-def stms(n):
-    n.node_type = 'statements'
-    n.value = ''
-
-@transformation_rule
 @collapsable
 def stm(n):
     pass
@@ -81,6 +76,17 @@ def low(n):
 @collapsable
 def expr(n):
     pass
+
+@transformation_rule
+def stms(n):
+    n.node_type = 'statements'
+    n.value = ''
+
+@transformation_rule
+def program(n):
+    n.node_type = 'program'
+    n.value = ''
+
 
 # Now for the more complicated rules
 
