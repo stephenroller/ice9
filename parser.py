@@ -387,8 +387,5 @@ def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
     retval = rule(stream) and stream.next_type_is('EOF')
     
-    from ast import parse2ast
-    parse2ast(stream.ast)
-    print stream.ast
-    return retval
+    return stream.ast
 
