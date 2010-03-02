@@ -243,9 +243,9 @@ def var(var_node):
         assert id_list.value == 'id_list'
         for def_id in id_list.children:
             assert def_id.node_type == 'ident'
-            var_node.add_child(node_type='define',
-                               value=def_id.value,
-                               children = type_info
+            var_node.add_child(node_type = 'define',
+                               value = def_id.value,
+                               children = type_info[:]
                                )
     
     var_node.remove_and_promote()
