@@ -9,23 +9,111 @@ class Ice9SemanticError(Ice9Error):
     pass
 
 ice9_types = [{
+    'nil': 'base',
     'int': 'base',
     'str': 'base',
     'bool': 'base',
 }]
 
-ice9_vars = [ { } ]
+ice9_symbols = [ { } ]
 
-def on_type(tnode):
-    for c in tnode.children:
-        pass
+def find_all_definitions(scopes, name):
+    """
+    Returns an iterator on all the definitions of name in scopes.
+    """
+    return (scope[name] for scope in scopes if name in scope)
+
+def define(scopes, name, value):
+    assert len(scopes) > 0, 'The scope stack is empty. This should *not* happen.'
+    scopes[0][name] = value
+
+def add_scope(scopes):
+    scopes.insert(0, dict())
+
+def leave_scope(scopes):
+    scopes.pop(0)
+    assert len(scopes) > 0, 'The scope stack is empty. This should *not* happen.'
+
+def check_and_set_type(node, check_type):
+    """
+    If the node doesn't already have an ice9_type, set it to check_type.
+    If the node has an ice9_type, check that ice9_type == check_type.
+    If the types don't match, raise an exception.
+    """
+    if hasattr(node, 'ice9_type'):
+        if node.ice9_type == check_type:
+            return True
+        else:
+            # FIXME: better error message
+            raise Ice9SemanticError, "types dont match"
+    else:
+        setattr(node, 'ice9_type', check_type)
+
+def typenode_to_type(tnode):
+    full_type = tnode.value
+    for dimension_size in tnode.children:
+        assert (dimension_size.node_type == 'literal'), "Array sizes must be literal ints."
+        assert dimension_size.ice9_type == 'int', "Array sizes must be literal ints."
+        full_type = ["array", full_type, dimension_size.value]
+    
+    return full_type
+
+def define_type(dtnode):
+    # process the type early
+    assert len(dtnode.children) == 1
+    assert dtnode.children[0].node_type == 'type'
+    ice9_type = typenode_to_type(dtnode.children[0])
+    dtnode.children.pop(0)
+    
+    typename = dtnode.value
+    assert len(dtnode.children) == 0
+    
+    definitions = list(find_all_definitions(ice9_types, typename))
+    assert len(definitions) == 0, 'type ' + typename + ' is already defined.'
+    
+    define(ice9_types, typename, ice9_type)
+    dtnode.kill()
+
+def define_var(varnode):
+    # Need to find the var's type
+    assert len(varnode.children) == 1
+    assert varnode.children[0].node_type == 'type'
+    ice9_type = typenode_to_type(varnode.children[0])
+    varnode.children.pop(0)
+    
+    varname = varnode.value
+    assert len(varnode.children) == 0
+    
+    definitions = list(find_all_definitions(ice9_symbols, varname))
+    assert len(definitions) == 0, 'var ' + varname + ' is already defined.'
+    
+    define(ice9_symbols, varname, ice9_type)
+    varnode.kill()
+    
+def ident(identnode):
+    # represents a symbol lookup
+    defn = None
+    
+    for d in find_all_definitions(ice9_symbols, identnode.value):
+        defn = d
+        break
+    
+    assert defn is not None, identnode.value + " is not defined."
+    check_and_set_type(identnode, defn)
+
+def operator(opnode):
+    if opnode.value in ('write', 'writes', 'break', 'return', 'exit'):
+        check_and_set_type(opnode, 'nil')
 
 inherited_callbacks = {
-    'type': on_type,
+    'define_type': define_type,
+    'define': define_var,
 }
 
 sythenisized_callbacks = {
-    
+    # 'type': on_type,
+    'ident': ident,
+    'operator': operator
 }
 
 def check_semantics(ast):
@@ -33,7 +121,7 @@ def check_semantics(ast):
         callback = inherited_callbacks[ast.node_type]
         callback(ast)
     
-    for n in ast.children:
+    for n in list(ast.children):
         check_semantics(n)
     
     if ast.node_type in sythenisized_callbacks:
@@ -42,9 +130,13 @@ def check_semantics(ast):
     
     return True
 
-    
 if __name__ == '__main__':
     with file('test.txt') as f:
-        p = parse2ast(parse(f.read()))
-        print p
-        print check_semantics(p)
+        ast = parse2ast(parse(f.read()))
+        print check_semantics(ast)
+        print '%' * 80
+        print ice9_types
+        print ""
+        print ice9_symbols
+        print '-' * 80
+        print ast
