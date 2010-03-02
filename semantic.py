@@ -8,7 +8,7 @@ from ast import parse2ast
 class Ice9SemanticError(Ice9Error):
     pass
 
-ice9_procs = {}
+ice9_procs = [ { } ]
 
 ice9_types = [{
     'nil': 'base',
@@ -158,19 +158,49 @@ def forward(forwardnode):
         check_and_set_type(forwardnode, return_type)
     else:
         check_and_set_type(forwardnode, 'nil')
-        
+    
+    proctype = ["proc", return_type]
     for c in forwardnode.children:
         assert c.node_type == 'param', "What's a non-param doing in a forward?"
         param(c)
+        proctype.append(c.ice9_type)
+    
+    define(ice9_procs, forwardnode.value, proctype)
+    forwardnode.kill()
 
 def inherited_proc(procnode):
     add_scope()
-    for c in procnode.children:
+    
+    procname = procnode.value
+    proctype = ["proc"]
+    for c in list(procnode.children):
         if c.node_type == 'param':
             param(c)
-
+            proctype.append(c.ice9_type)
+            c.kill()
+        else:
+            break
+    
+    if procnode.children[0].node_type == 'type':
+        rettype = typenode_to_type(procnode.children.pop(0))
+    else:
+        rettype = 'nil'
+    proctype.insert(1, rettype)
+    
+    # check if we had a forward define it already.
+    check_and_set_type(procnode, proctype)
+    forward_defn_type = first_definition(ice9_procs, procname)
+    if forward_defn_type is not None:
+        assert equivalent_types(proctype, forward_defn_type), \
+               "proc " + procname + " does not match the signature of its forward."
+    else:
+        define_type(ice9_procs, procname, proctype)
+    
 def synthesized_proc(procnode):
     leave_scope()
+
+def notype(prognode):
+    check_and_set_type(prognode, 'nil')
 
 inherited_callbacks = {
     'define_type': define_type,
@@ -184,6 +214,8 @@ sythenisized_callbacks = {
     # 'operator': operator,
     # 'assignment': assignment,
     'proc': synthesized_proc,
+    'program': notype,
+    'statements': notype,
 }
 
 def check_semantics(ast):
@@ -205,6 +237,8 @@ if __name__ == '__main__':
         ast = parse2ast(parse(f.read()))
         print check_semantics(ast)
         print '%' * 80
+        print ice9_procs
+        print ""
         print ice9_types
         print ""
         print ice9_symbols
