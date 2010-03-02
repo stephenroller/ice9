@@ -24,15 +24,43 @@ def find_all_definitions(scopes, name):
     return (scope[name] for scope in scopes if name in scope)
 
 def define(scopes, name, value):
+    """
+    Define name to be value in the latest scope of scopes.
+    """
     assert len(scopes) > 0, 'The scope stack is empty. This should *not* happen.'
     scopes[0][name] = value
 
-def add_scope(scopes):
-    scopes.insert(0, dict())
+def add_scope():
+    """
+    Add a new scope.
+    """
+    ice9_types.insert(0, dict())
+    ice9_symbols.insert(0, dict())
 
-def leave_scope(scopes):
-    scopes.pop(0)
-    assert len(scopes) > 0, 'The scope stack is empty. This should *not* happen.'
+def leave_scope():
+    """
+    Leave the last scope.
+    """
+    ice9_types.pop(0)
+    ice9_symbols.pop(0)
+    
+    assert len(ice9_types) > 0 and len(ice9_symbols) > 0, \
+            'The scope stack is empty. This should *not* happen.'
+
+def first_definition(scope, name):
+    """
+    Returns the first definition of name in scope, or None if none exists.
+    """
+    for d in find_all_definitions(scope, name):
+        return d
+    
+    return None
+
+def equivalent_types(type1, type2):
+    """
+    Returns true or false, if the types are equivalent.
+    """
+    return type1 == type2
 
 def check_and_set_type(node, check_type):
     """
@@ -41,7 +69,7 @@ def check_and_set_type(node, check_type):
     If the types don't match, raise an exception.
     """
     if hasattr(node, 'ice9_type'):
-        if node.ice9_type == check_type:
+        if equivalent_types(node.ice_type, check_type):
             return True
         else:
             # FIXME: better error message
@@ -93,11 +121,7 @@ def define_var(varnode):
 def ident(identnode):
     # represents a symbol lookup
     defn = None
-    
-    for d in find_all_definitions(ice9_symbols, identnode.value):
-        defn = d
-        break
-    
+    defn = first_definition(ice9_symbols, identnode.value)
     assert defn is not None, identnode.value + " is not defined."
     check_and_set_type(identnode, defn)
 
