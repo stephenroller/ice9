@@ -79,7 +79,7 @@ def expr(n):
 
 @transformation_rule
 def stms(n):
-    n.NODE_TYPE = 'statements'
+    n.node_type = 'statements'
     n.value = ''
 
 @transformation_rule
