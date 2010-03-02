@@ -182,7 +182,7 @@ def dec_list(dec_list_node):
                 param = c.children[0]
                 param.node_type = 'param'
                 c.remove_and_promote()
-                param.adopt_left_sibling()
+                param.adopt_right_sibling()
     
     dec_list_node.remove_and_promote()
 
@@ -195,6 +195,8 @@ def forward(fnode):
     assert namenode.node_type == 'ident'
     fnode.node_type = 'forward'
     fnode.value = namenode.value
+    if len(fnode.children) >= 2 and fnode.children[-1].node_type == 'type':
+        fnode.children.insert(0, fnode.children.pop(-1))
     
 
 @transformation_rule
@@ -271,7 +273,10 @@ def proc(proc_node):
     assert ident.node_type == 'ident'
     proc_node.node_type = 'proc'
     proc_node.value = ident.value
+    
     # first child is left as type and second as statements
+    if len(proc_node.children) >= 2 and proc_node.children[-2].node_type == 'type':
+        proc_node.children.insert(0, proc_node.children.pop(-2))
 
 @transformation_rule
 def proc_prime(pp_node):

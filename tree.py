@@ -48,7 +48,14 @@ class Tree():
         i = self.parent.children.index(self)
         spc = self.parent.children
         self.parent.children = spc[:i] + self.children + spc[i+1:]
-        # self.parent.children.remove(self)
+    
+    def adopt_right_sibling(self):
+        i = self.parent.children.index(self)
+        # remove the left sibling
+        left_sibling = self.parent.children.pop(i+1)
+        # and move it to the front
+        self.children.insert(0, left_sibling)
+        left_sibling.parent = self
     
     def adopt_left_sibling(self):
         i = self.parent.children.index(self)
