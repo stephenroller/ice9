@@ -8,6 +8,8 @@ from ast import parse2ast
 class Ice9SemanticError(Ice9Error):
     pass
 
+ice9_procs = {}
+
 ice9_types = [{
     'nil': 'base',
     'int': 'base',
@@ -117,7 +119,19 @@ def define_var(varnode):
     
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
+
+def param(paramnode):
+    assert len(paramnode.children) == 1
+    assert paramnode.children[0].node_type == 'type'
+    ice9_type = typenode_to_type(paramnode.children[0])
+    paramnode.children.pop(0)
     
+    paramname = paramnode.value
+    assert len(paramnode.children) == 0
+    paramnode.ice9_type = ice9_type
+    paramnode.children = []
+    
+
 def ident(identnode):
     # represents a symbol lookup
     defn = None
@@ -129,15 +143,47 @@ def operator(opnode):
     if opnode.value in ('write', 'writes', 'break', 'return', 'exit'):
         check_and_set_type(opnode, 'nil')
 
+def array_reference(arrnode):
+    start_type = first_definition(ice9_symbols, arrnode.value)
+
+def assignment(setnode):
+    cs = setnode.children
+    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type)
+    
+    check_and_set_type(setnode, 'nil')
+
+def forward(forwardnode):
+    if forwardnode.children[-1].node_type == 'type':
+        return_type = typenode_to_type(forwardnode.children.pop(-1))
+        check_and_set_type(forwardnode, return_type)
+    else:
+        check_and_set_type(forwardnode, 'nil')
+        
+    for c in forwardnode.children:
+        assert c.node_type == 'param', "What's a non-param doing in a forward?"
+        param(c)
+
+def inherited_proc(procnode):
+    add_scope()
+    for c in procnode.children:
+        if c.node_type == 'param':
+            param(c)
+
+def synthesized_proc(procnode):
+    leave_scope()
+
 inherited_callbacks = {
     'define_type': define_type,
     'define': define_var,
+    'proc': inherited_proc,
+    'forward': forward,
 }
 
 sythenisized_callbacks = {
-    # 'type': on_type,
     'ident': ident,
-    'operator': operator
+    # 'operator': operator,
+    # 'assignment': assignment,
+    'proc': synthesized_proc,
 }
 
 def check_semantics(ast):
