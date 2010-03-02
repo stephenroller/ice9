@@ -1,4 +1,4 @@
-#!/usr/bin/env
+#!/usr/bin/env python
 
 """
 Used for converting a parse tree into an AST.
@@ -79,7 +79,7 @@ def expr(n):
 
 @transformation_rule
 def stms(n):
-    n.node_type = 'statements'
+    n.NODE_TYPE = 'statements'
     n.value = ''
 
 @transformation_rule
@@ -187,6 +187,15 @@ def dec_list(dec_list_node):
     dec_list_node.remove_and_promote()
 
 # proc call
+
+@transformation_rule
+def forward(fnode):
+    assert fnode.children.pop(0).value == 'forward'
+    namenode = fnode.children.pop(0)
+    assert namenode.node_type == 'ident'
+    fnode.node_type = 'forward'
+    fnode.value = namenode.value
+    
 
 @transformation_rule
 def proc_call(proc_call_node):
