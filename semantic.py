@@ -9,7 +9,7 @@ class Ice9SemanticError(Ice9Error):
     pass
 
 ice9_procs = [ {
-    'int': ['proc', 'int', 'str']
+    'int': ['proc', 'int', ["param", "num", 'str']]
 } ]
 
 ice9_types = [{
@@ -39,6 +39,8 @@ def expand_type(typeval):
     elif type(typeval) == list:
         if typeval[0] == "array":
             return ["array", expand_type(typeval[1])] + typeval[2:]
+        elif typeval[0] == "param":
+            return expand_type(typeval[2])
         elif typeval[0] == "forward" or typeval[0] == "proc":
             return ["proc"] + [expand_type(t) for t in typeval[1:]]
         else:
@@ -87,7 +89,7 @@ def check_and_set_type(node, check_type):
             return True
         else:
             # FIXME: better error message
-            raise Ice9SemanticError, "types dont match"
+            raise Ice9SemanticError(), "types dont match"
     else:
         setattr(node, 'ice9_type', check_type)
 
@@ -168,9 +170,15 @@ def array_reference(arrnode):
 
 def assignment(setnode):
     cs = setnode.children
-    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type)
+    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type), \
+           ("Types " + cs[0].ice9_type + " and " + cs[1].ice9_type +
+            " are incompatible.")
+    assert cs[1].ice9_type != 'nil', ' '.join(
+            'Cannot assign variable', cs[1].value)
+    assert first_definition(ice9_types, cs[0].ice9_type) == "base", ''.join(
+            "Cannot assign to non-base type ", cs[0].ice9_type)
     
-    check_and_set_type(setnode, cs[0].ice9_type)
+    check_and_set_type(setnode, 'nil')
 
 def forward(forwardnode):
     if forwardnode.children[0].node_type == 'type':
@@ -179,13 +187,13 @@ def forward(forwardnode):
         return_type = 'nil'
     
     check_and_set_type(forwardnode, return_type)
-    proctype = ["proc", return_type]
+    forwardtype = ["forward", return_type]
     for c in forwardnode.children:
         assert c.node_type == 'param', "What's a non-param doing in a forward?"
         param(c)
-        proctype.append(c.ice9_type)
+        forwardtype.append(["param", c.value, c.ice9_type])
     
-    define(ice9_procs, forwardnode.value, proctype)
+    define(ice9_procs, forwardnode.value, forwardtype)
     forwardnode.kill()
 
 def inherited_proc(procnode):
@@ -196,7 +204,7 @@ def inherited_proc(procnode):
     for c in procnode.children:
         if c.node_type == 'param':
             param(c)
-            proctype.append(c.ice9_type)
+            proctype.append(["param", c.value, c.ice9_type])
             define(ice9_symbols, c.value, c.ice9_type)
     
     if procnode.children[0].node_type == 'type':
@@ -204,7 +212,6 @@ def inherited_proc(procnode):
     else:
         rettype = 'nil'
     proctype.insert(1, rettype)
-    
     # check if we had a forward define it already.
     check_and_set_type(procnode, proctype)
     forward_defn_type = first_definition(ice9_procs, procname)
@@ -221,7 +228,14 @@ def notype(prognode):
     check_and_set_type(prognode, 'nil')
 
 def proc_call(pcnode):
-    pass
+    from itertools import izip_longest
+    pctype = first_definition(ice9_procs, pcnode.value)
+    for child, param in izip_longest(pcnode.children, pctype[2:]):
+        assert equivalent_types(child.ice9_type, param), str(
+            "parameter " + " takes a " + param.ice9_type +
+            ", not a " + child.ice9_type)
+    
+    check_and_set_type(pcnode, pctype[1])
 
 inherited_callbacks = {
     'define_type': define_type,
@@ -236,6 +250,7 @@ sythenisized_callbacks = {
     'assignment': assignment,
     'array_reference': array_reference,
     'proc': synthesized_proc,
+    'proc_call': proc_call,
     'program': notype,
     'statements': notype,
 }
