@@ -8,7 +8,9 @@ from ast import parse2ast
 class Ice9SemanticError(Ice9Error):
     pass
 
-ice9_procs = [ { } ]
+ice9_procs = [ {
+    'int': ['proc', 'int', 'str']
+} ]
 
 ice9_types = [{
     'nil': 'base',
@@ -20,29 +22,41 @@ ice9_types = [{
 ice9_symbols = [ { } ]
 
 def find_all_definitions(scopes, name):
-    """
-    Returns an iterator on all the definitions of name in scopes.
-    """
+    """Returns an iterator on all the definitions of name in scopes."""
     return (scope[name] for scope in scopes if name in scope)
 
+def expand_type(typeval):
+    """Keeps expanding out typeval until it hits a base."""
+    if type(typeval) is str:
+        subtype = first_definition(ice9_types, typeval)
+        if subtype is not None:
+            if subtype == 'base':
+                return typeval
+            else:
+                return expand_type(subtype)
+        else:
+            raise Exception, "Dead type!"
+    elif type(typeval) == list:
+        if typeval[0] == "array":
+            return ["array", expand_type(typeval[1])] + typeval[2:]
+        elif typeval[0] == "forward" or typeval[0] == "proc":
+            return ["proc"] + [expand_type(t) for t in typeval[1:]]
+        else:
+            raise Exception, "You forgot to expand the type of " + typeval[0]
+    
+
 def define(scopes, name, value):
-    """
-    Define name to be value in the latest scope of scopes.
-    """
+    """Define name to be value in the latest scope of scopes."""
     assert len(scopes) > 0, 'The scope stack is empty. This should *not* happen.'
     scopes[0][name] = value
 
 def add_scope():
-    """
-    Add a new scope.
-    """
+    """Add a new scope."""
     ice9_types.insert(0, dict())
     ice9_symbols.insert(0, dict())
 
 def leave_scope():
-    """
-    Leave the last scope.
-    """
+    """Leave the last scope."""
     ice9_types.pop(0)
     ice9_symbols.pop(0)
     
@@ -59,10 +73,8 @@ def first_definition(scope, name):
     return None
 
 def equivalent_types(type1, type2):
-    """
-    Returns true or false, if the types are equivalent.
-    """
-    return type1 == type2
+    """Returns true or false, if the types are equivalent."""
+    return expand_type(type1) == expand_type(type2)
 
 def check_and_set_type(node, check_type):
     """
@@ -114,8 +126,8 @@ def define_var(varnode):
     varname = varnode.value
     assert len(varnode.children) == 0
     
-    definitions = list(find_all_definitions(ice9_symbols, varname))
-    assert len(definitions) == 0, 'var ' + varname + ' is already defined.'
+    # definitions = list(find_all_definitions(ice9_symbols, varname))
+    # assert len(definitions) == 0, 'var ' + varname + ' is already defined.'
     
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
@@ -144,21 +156,29 @@ def operator(opnode):
         check_and_set_type(opnode, 'nil')
 
 def array_reference(arrnode):
-    start_type = first_definition(ice9_symbols, arrnode.value)
+    vartype = first_definition(ice9_symbols, arrnode.value)
+    assert vartype is not None
+    vartype = expand_type(vartype)
+    for c in arrnode.children:
+        assert c.ice9_type == 'int'
+        assert vartype[0] == "array"
+        vartype = vartype[1]
+    
+    check_and_set_type(arrnode, vartype)
 
 def assignment(setnode):
     cs = setnode.children
     assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type)
     
-    check_and_set_type(setnode, 'nil')
+    check_and_set_type(setnode, cs[0].ice9_type)
 
 def forward(forwardnode):
-    if forwardnode.children[-1].node_type == 'type':
-        return_type = typenode_to_type(forwardnode.children.pop(-1))
-        check_and_set_type(forwardnode, return_type)
+    if forwardnode.children[0].node_type == 'type':
+        return_type = typenode_to_type(forwardnode.children.pop(0))
     else:
-        check_and_set_type(forwardnode, 'nil')
+        return_type = 'nil'
     
+    check_and_set_type(forwardnode, return_type)
     proctype = ["proc", return_type]
     for c in forwardnode.children:
         assert c.node_type == 'param', "What's a non-param doing in a forward?"
@@ -173,13 +193,11 @@ def inherited_proc(procnode):
     
     procname = procnode.value
     proctype = ["proc"]
-    for c in list(procnode.children):
+    for c in procnode.children:
         if c.node_type == 'param':
             param(c)
             proctype.append(c.ice9_type)
-            c.kill()
-        else:
-            break
+            define(ice9_symbols, c.value, c.ice9_type)
     
     if procnode.children[0].node_type == 'type':
         rettype = typenode_to_type(procnode.children.pop(0))
@@ -202,6 +220,9 @@ def synthesized_proc(procnode):
 def notype(prognode):
     check_and_set_type(prognode, 'nil')
 
+def proc_call(pcnode):
+    pass
+
 inherited_callbacks = {
     'define_type': define_type,
     'define': define_var,
@@ -212,7 +233,8 @@ inherited_callbacks = {
 sythenisized_callbacks = {
     'ident': ident,
     # 'operator': operator,
-    # 'assignment': assignment,
+    'assignment': assignment,
+    'array_reference': array_reference,
     'proc': synthesized_proc,
     'program': notype,
     'statements': notype,
