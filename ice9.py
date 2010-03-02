@@ -12,9 +12,12 @@ class Ice9Error(Exception):
     def __str__(self):
         return "line %d: %s" % (self.line, str(self.error))
 
+def compile(source):
+    from parser import parse
+    
+    return parse(source)
 
 def main(*args):
-    from parser import parse
     from parser import Ice9SyntaxError
     from lexer import Ice9LexicalError
     
@@ -29,11 +32,13 @@ def main(*args):
     
     try:
         # try to parse the source and exit cleanly
-        if parse(source):
+        compiled = compile(source)
+        if compiled:
+            print compiled
             sys.exit(0)
         else:
             raise Ice9Error(0, 'invalid input')
-    except (Ice9Error, Ice9SyntaxError, Ice9LexicalError), e:
+    except (Ice9Error, Ice9LexicalError,Ice9SyntaxError) as e:
         # but if there's an error, print it out and exit.
         sys.stderr.write(str(e) + "\n")
         sys.exit(1)
