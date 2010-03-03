@@ -14,8 +14,9 @@ class Ice9Error(Exception):
 
 def compile(source):
     from parser import parse
-    
-    return parse(source)
+    from ast import parse2ast
+    from semantic import check_semantics
+    return check_semantics(parse2ast(parse(source)))
 
 def main(*args):
     from parser import Ice9SyntaxError
@@ -34,7 +35,6 @@ def main(*args):
         # try to parse the source and exit cleanly
         compiled = compile(source)
         if compiled:
-            print compiled
             sys.exit(0)
         else:
             raise Ice9Error(0, 'invalid input')
