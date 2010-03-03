@@ -352,6 +352,8 @@ def parse2ast(parse_tree):
                         p.node_type = 'operator'
                         p.value = op
                         p.children = node.children[1:]
+                        for n in p.children:
+                            n.parent = p
                 
                 # let's check for those binary operators
                 elif (node.children[0].node_type == 'token' and 
@@ -370,6 +372,8 @@ def parse2ast(parse_tree):
                         p.node_type = 'operator'
                         p.value = op
                         p.children = [left, right]
+                        left.parent = p
+                        right.parent = p
 
     
     return parse_tree
