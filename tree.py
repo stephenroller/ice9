@@ -32,6 +32,7 @@ class Tree():
             assert not hasattr(self, 'ice9_type')
             setattr(self, 'ice9_type', self.children[0].ice9_type)
         
+        self.line = self.children[0].line
         self.node_type = self.children[0].node_type
         self.value = self.children[0].value
         self.children = self.children[0].children

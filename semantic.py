@@ -6,7 +6,9 @@ from parser import parse
 from ast import parse2ast
 
 class Ice9SemanticError(Ice9Error):
-    pass
+    def __init__(self, node, error_message):
+        self.line = node.line
+        self.error = error_message
 
 ice9_procs = [ {
     'int': ['proc', 'int', ["param", "num", 'str']]
@@ -25,9 +27,6 @@ ice9_symbols = [ { } ]
 def find_all_definitions(scopes, name):
     """Returns an iterator on all the definitions of name in scopes."""
     return (scope[name] for scope in scopes if name in scope)
-
-
-
 
 def define(scopes, name, value):
     """Define name to be value in the latest scope of scopes."""
@@ -101,6 +100,20 @@ def check_and_set_type(node, check_type):
 
 
 
+##
+
+
+def semantic_check(r):
+    def modified(node):
+        try:
+            return r(node)
+        except AssertionError, e:
+            raise Ice9SemanticError(node, e)
+    
+    modified.func_name = r.func_name
+    return modified
+
+@semantic_check
 def typenode_to_type(tnode):
     full_type = tnode.value
     for dimension_size in tnode.children:
@@ -110,7 +123,7 @@ def typenode_to_type(tnode):
     
     return full_type
 
-
+@semantic_check
 def define_type(dtnode):
     # process the type early
     assert len(dtnode.children) == 1
@@ -127,7 +140,7 @@ def define_type(dtnode):
     define(ice9_types, typename, ice9_type)
     dtnode.kill()
 
-
+@semantic_check
 def define_var(varnode):
     # Need to find the var's type
     assert len(varnode.children) == 1
@@ -144,7 +157,7 @@ def define_var(varnode):
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
 
-
+@semantic_check
 def param(paramnode):
     assert len(paramnode.children) == 1
     assert paramnode.children[0].node_type == 'type'
@@ -156,7 +169,7 @@ def param(paramnode):
     paramnode.ice9_type = ice9_type
     paramnode.children = []
     
-
+@semantic_check
 def ident(identnode):
     # represents a symbol lookup
     defn = None
@@ -164,7 +177,7 @@ def ident(identnode):
     assert defn is not None, identnode.value + " is not defined."
     check_and_set_type(identnode, defn)
 
-
+@semantic_check
 def operator(opnode):
     op = opnode.value
     
@@ -207,7 +220,7 @@ def operator(opnode):
         assert opnode.children[0].ice9_type in ('int', 'bool', 'str')
         check_and_set_type(opnode, opnode.children[0].ice9_type)
         
-
+@semantic_check
 def array_reference(arrnode):
     vartype = first_definition(ice9_symbols, arrnode.value)
     assert vartype is not None
@@ -219,6 +232,7 @@ def array_reference(arrnode):
     
     check_and_set_type(arrnode, vartype)
 
+@semantic_check
 def assignment(setnode):
     cs = setnode.children
     assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type), \
@@ -231,6 +245,7 @@ def assignment(setnode):
     
     check_and_set_type(setnode, 'nil')
 
+@semantic_check
 def forward(forwardnode):
     if len(forwardnode.children) >= 1 and forwardnode.children[0].node_type == 'type':
         return_type = typenode_to_type(forwardnode.children.pop(0))
@@ -247,6 +262,7 @@ def forward(forwardnode):
     define(ice9_procs, forwardnode.value, forwardtype)
     forwardnode.kill()
 
+@semantic_check
 def inherited_proc(procnode):
     add_scope()
     
@@ -272,13 +288,16 @@ def inherited_proc(procnode):
         forward_defn_type[0] = "proc"
     else:
         define_type(ice9_procs, procname, proctype)
-    
+
+@semantic_check
 def synthesized_proc(procnode):
     leave_scope()
 
+@semantic_check
 def notype(prognode):
     check_and_set_type(prognode, 'nil')
 
+@semantic_check
 def proc_call(pcnode):
     from itertools import izip_longest
     pctype = first_definition(ice9_procs, pcnode.value)

@@ -21,6 +21,7 @@ def compile(source):
 def main(*args):
     from parser import Ice9SyntaxError
     from lexer import Ice9LexicalError
+    from semantic import Ice9SemanticError
     
     if len(args) == 0:
         # if no filename is specified, use stdin
@@ -38,7 +39,7 @@ def main(*args):
             sys.exit(0)
         else:
             raise Ice9Error(0, 'invalid input')
-    except (Ice9Error, Ice9LexicalError,Ice9SyntaxError) as e:
+    except (Ice9Error, Ice9LexicalError, Ice9SyntaxError, Ice9SemanticError) as e:
         # but if there's an error, print it out and exit.
         sys.stderr.write(str(e) + "\n")
         sys.exit(1)

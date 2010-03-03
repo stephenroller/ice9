@@ -22,6 +22,7 @@ class TokenStream:
         self.next_type_is('SOF')
     
     def into_child(self, **kwargs):
+        kwargs['line'] = self.line
         self.current_node = self.current_node.add_child(**kwargs)
     
     def backtrack(self):
@@ -56,7 +57,10 @@ class TokenStream:
         """
         if self.expecting(expected):
             toktype, tokval = self.current_word()
-            self.current_node.add_child(node_type='token', value=tokval, token_type=toktype)
+            self.current_node.add_child(node_type='token', 
+                                        value=tokval, 
+                                        token_type=toktype,
+                                        line=self.line)
             self.next()
             return True
         else:
@@ -90,7 +94,10 @@ class TokenStream:
         tokentype, tokenvalue = self.current_word()
         if tokentype == expected_type:
             toktyp, tokval = self.current_word()
-            self.current_node.add_child(node_type='token', value=tokval, token_type=toktyp)
+            self.current_node.add_child(node_type='token', 
+                                        value=tokval, 
+                                        token_type=toktyp,
+                                        line=self.line)
             self.next()
             return True
         else:
