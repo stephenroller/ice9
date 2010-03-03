@@ -160,18 +160,33 @@ def operator(opnode):
         check_and_set_type(opnode, 'nil')
         assert len(opnode.children) == 0, op + " takes no arguments."
     
+        if op == 'break':
+            # check loop here
+            pass
+        
+    
     elif op == 'write' or op == 'writes':
         check_and_set_type(opnode, 'nil')
-        assert len(opnode.children) == 1, "Writes only takes one operator"
+        assert len(opnode.children) == 1, op + " takes one parameter."
+        assert opnode.children[0].ice9_type in ('bool', 'int', 'str'), \
+            op + ' cannot use type ' + opnode.children[0].ice9_type
+    
+    elif len(opnode.children) == 1 and op == '-':
+        assert opnode.children[0].ice9_type in ('bool', 'int')
+        check_and_set_type(opnode, opnode.children[0].ice9_type)
+    
+    elif len(opnode.children) == 1 and op == '?':
+        assert opnode.children[0].ice9_type == 'int', '? takes a bool.'
+        check_and_set_type(opnode, 'int')
     
     elif op in ('<', '<=', '>', '>='):
         for c in opnode.children:
-            assert c.ice9_type == 'int', c.value + "is not an int."
+            assert c.ice9_type == 'int', c.value + " is not an int."
         check_and_set_type(opnode, 'bool')
    
-    elif op in ('-', '/', '%'):
+    elif op in ('/', '%'):
         for c in opnode.children:
-            assert c.ice9_type == 'int', c.value + "is not an int."
+            assert c.ice9_type == 'int', c.value + " is not an int."
         check_and_set_type(opnode, 'int')
     
     elif op in ('=', '!=', '-', '+', '*'):
