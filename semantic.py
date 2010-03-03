@@ -220,7 +220,7 @@ def assignment(setnode):
     check_and_set_type(setnode, 'nil')
 
 def forward(forwardnode):
-    if forwardnode.children[0].node_type == 'type':
+    if len(forwardnode.children) >= 1 and forwardnode.children[0].node_type == 'type':
         return_type = typenode_to_type(forwardnode.children.pop(0))
     else:
         return_type = 'nil'
@@ -257,6 +257,7 @@ def inherited_proc(procnode):
     if forward_defn_type is not None:
         assert equivalent_types(proctype, forward_defn_type), \
                "proc " + procname + " does not match the signature of its forward."
+        forward_defn_type[0] = "proc"
     else:
         define_type(ice9_procs, procname, proctype)
     
