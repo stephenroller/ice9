@@ -21,31 +21,13 @@ ice9_types = [{
 
 ice9_symbols = [ { } ]
 
+
 def find_all_definitions(scopes, name):
     """Returns an iterator on all the definitions of name in scopes."""
     return (scope[name] for scope in scopes if name in scope)
 
-def expand_type(typeval):
-    """Keeps expanding out typeval until it hits a base."""
-    if type(typeval) is str:
-        subtype = first_definition(ice9_types, typeval)
-        if subtype is not None:
-            if subtype == 'base':
-                return typeval
-            else:
-                return expand_type(subtype)
-        else:
-            raise Exception, "Dead type!"
-    elif type(typeval) == list:
-        if typeval[0] == "array":
-            return ["array", expand_type(typeval[1])] + typeval[2:]
-        elif typeval[0] == "param":
-            return expand_type(typeval[2])
-        elif typeval[0] == "forward" or typeval[0] == "proc":
-            return ["proc"] + [expand_type(t) for t in typeval[1:]]
-        else:
-            raise Exception, "You forgot to expand the type of " + typeval[0]
-    
+
+
 
 def define(scopes, name, value):
     """Define name to be value in the latest scope of scopes."""
@@ -74,9 +56,33 @@ def first_definition(scope, name):
     
     return None
 
+
+def expand_type(typeval):
+    """Keeps expanding out typeval until it hits a base."""
+    if type(typeval) is str:
+        subtype = first_definition(ice9_types, typeval)
+        if subtype is not None:
+            if subtype == 'base':
+                return typeval
+            else:
+                return expand_type(subtype)
+        else:
+            raise Exception, "Dead type!"
+    elif type(typeval) == list:
+        if typeval[0] == "array":
+            return ["array", expand_type(typeval[1])] + typeval[2:]
+        elif typeval[0] == "param":
+            return expand_type(typeval[2])
+        elif typeval[0] == "forward" or typeval[0] == "proc":
+            return ["proc"] + [expand_type(t) for t in typeval[1:]]
+        else:
+            raise Exception, "You forgot to expand the type of " + typeval[0]
+
+
 def equivalent_types(type1, type2):
     """Returns true or false, if the types are equivalent."""
     return expand_type(type1) == expand_type(type2)
+
 
 def check_and_set_type(node, check_type):
     """
@@ -93,6 +99,8 @@ def check_and_set_type(node, check_type):
     else:
         setattr(node, 'ice9_type', check_type)
 
+
+
 def typenode_to_type(tnode):
     full_type = tnode.value
     for dimension_size in tnode.children:
@@ -101,6 +109,7 @@ def typenode_to_type(tnode):
         full_type = ["array", full_type, dimension_size.value]
     
     return full_type
+
 
 def define_type(dtnode):
     # process the type early
@@ -118,6 +127,7 @@ def define_type(dtnode):
     define(ice9_types, typename, ice9_type)
     dtnode.kill()
 
+
 def define_var(varnode):
     # Need to find the var's type
     assert len(varnode.children) == 1
@@ -133,6 +143,7 @@ def define_var(varnode):
     
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
+
 
 def param(paramnode):
     assert len(paramnode.children) == 1
@@ -152,6 +163,7 @@ def ident(identnode):
     defn = first_definition(ice9_symbols, identnode.value)
     assert defn is not None, identnode.value + " is not defined."
     check_and_set_type(identnode, defn)
+
 
 def operator(opnode):
     op = opnode.value
