@@ -154,8 +154,32 @@ def ident(identnode):
     check_and_set_type(identnode, defn)
 
 def operator(opnode):
-    if opnode.value in ('write', 'writes', 'break', 'return', 'exit'):
+    op = opnode.value
+    
+    if op in ('break', 'return', 'exit'):
         check_and_set_type(opnode, 'nil')
+        assert len(opnode.children) == 0, op + " takes no arguments."
+    
+    elif op == 'write' or op == 'writes':
+        check_and_set_type(opnode, 'nil')
+        assert len(opnode.children) == 1, "Writes only takes one operator"
+    
+    elif op in ('<', '<=', '>', '>='):
+        for c in opnode.children:
+            assert c.ice9_type == 'int', c.value + "is not an int."
+        check_and_set_type(opnode, 'bool')
+   
+    elif op in ('-', '/', '%'):
+        for c in opnode.children:
+            assert c.ice9_type == 'int', c.value + "is not an int."
+        check_and_set_type(opnode, 'int')
+    
+    elif op in ('=', '!=', '-', '+', '*'):
+        assert opnode.children[0].ice9_type == opnode.children[1].ice9_type, \
+            "arguments of " + op + " must be the same."
+        assert opnode.children[0].ice9_type in ('int', 'bool', 'str')
+        check_and_set_type(opnode, opnode.children[0].ice9_type)
+        
 
 def array_reference(arrnode):
     vartype = first_definition(ice9_symbols, arrnode.value)
@@ -246,7 +270,7 @@ inherited_callbacks = {
 
 sythenisized_callbacks = {
     'ident': ident,
-    # 'operator': operator,
+    'operator': operator,
     'assignment': assignment,
     'array_reference': array_reference,
     'proc': synthesized_proc,
