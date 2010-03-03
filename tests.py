@@ -31,7 +31,7 @@ def test_parse_false(rule, source):
     """
     class FalseTestCase(unittest.TestCase):
         def __str__(self):
-            return '(not %s) %s' % (rule.func_name, source)
+            return '(not %s) "%s"' % (rule.func_name, source)
         
         def runTest(self):
             assert not parse(source, rule)
@@ -139,10 +139,10 @@ test_multi_comparison = test_parse_error(expr, 'a < b < c', 'syntax error near <
 test_assignment = test_parse_true(stm, 'x := 3;')
 # technically should be a syntax error, but I plan on handling this semantically.
 test_multi_assignment = test_parse_true(stm, 'x := y := z;')
-
-for i in xrange(1, 250):
-    # Load all the community tests
-    globals()['community_test_%d' % i] = make_community_test(i)
+# 
+# for i in xrange(1, 250):
+#     # Load all the community tests
+#     globals()['community_test_%d' % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()

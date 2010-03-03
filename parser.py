@@ -139,7 +139,7 @@ def program(stream):
     while var(stream) or ice9_type(stream) or forward(stream) or proc(stream):
         pass
     
-    return stms(stream)
+    return stms(stream, True)
 
 @grammar_rule
 def stms(stream):
@@ -387,5 +387,8 @@ def parse(source, rule=program):
     stream = TokenStream(lex_source(source))
     retval = rule(stream) and stream.next_type_is('EOF')
     
-    return stream.ast
+    if retval:
+        return stream.ast
+    else:
+        return retval
 
