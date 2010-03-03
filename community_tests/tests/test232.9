@@ -1,3 +1,11 @@
-# i := 5 + 6 <= 2;										succeed
+# proc overriding global scope w/ param					succeed
 
-i := 5 + 6 <= 2;				
+var bar : int
+
+proc foo(bar : bool)
+	bar := true;
+end
+
+foo(true);
+
+bar := 0;

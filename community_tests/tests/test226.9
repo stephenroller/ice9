@@ -1,7 +1,11 @@
-# id := ();				(missing exp)					fail
+# proc call w/ too few params								fail
 
-id 
-:= 
-(
-)
-;	
+proc foo(a, b : int)
+	;
+end
+
+foo
+	(
+	0
+	)
+	;

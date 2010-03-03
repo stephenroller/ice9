@@ -1,18 +1,5 @@
-# if exp -> stm [] exp -> stm [] -> stm fi					fail
+# write true;												fail
 
-if 
-true 
--> 
-; 
-; 
-[] 
-false 
--> 
-; 
-; 
-[] 
--> 
-; 
-; 
-fi   
-# missing expr
+write 
+	true
+	;	

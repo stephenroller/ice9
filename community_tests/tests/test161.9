@@ -1,3 +1,14 @@
-# 1-5;													succeed
+# proc different from forward (return type)				fail
 
-1-5;							
+forward foo(a,b : int) : bool
+
+proc foo(
+		a
+		,
+		b 
+		: 
+		int
+		) 
+		: 
+		int
+end

@@ -1,3 +1,14 @@
-# var i : int , [1] ; (missing id, colon & typeid)			fail
+# var a : int[2] a[0][0] := 0;							fail
 
-var i : int , [1] ;
+var a : int[2]
+
+a
+	[
+	0
+	]
+	[
+	0
+	] 
+	:= 
+	0
+	;		# too many dereferences

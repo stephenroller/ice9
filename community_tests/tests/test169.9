@@ -1,3 +1,10 @@
-# 1 != 2;													succeed
+# trailing reference to proc parameter					fail
 
-1 != 2;						
+proc foo (a : int)
+
+end
+
+a 
+:= 
+0
+;

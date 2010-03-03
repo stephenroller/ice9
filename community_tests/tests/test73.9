@@ -1,3 +1,7 @@
-# proc foo () ; end stm									succeed
+# do 1 -> ; od												fail
 
-proc foo () ; end ;
+do 
+	1 
+	-> 
+	; 
+od

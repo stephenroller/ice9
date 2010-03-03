@@ -1,3 +1,8 @@
-# type foo = int [ ;  (missing int & ])					fail
+# type foo = int[0]										fail
 
-type foo = int [ ;  
+type foo = int
+				[
+				0
+				]
+
+;

@@ -1,3 +1,10 @@
-# type foo	;			(incomplete)					fail
+# type foo = int[2] type bar = foo[2] var b : bar b := 0; fail
 
-type foo	;		
+type foo = int[2] 
+type bar = foo[2] 
+var b : bar 
+
+b 
+	:= 
+	0
+	; 

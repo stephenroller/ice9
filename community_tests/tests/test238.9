@@ -1,7 +1,10 @@
-# a = b = c;				(non-assoc)						fail
+# check scope of fa loop variable							fail
 
-a 
-= 
-b 
-= 
-c;			
+fa i := 0 to 1 ->
+	;
+af
+
+i 
+	+ 
+	0
+	;

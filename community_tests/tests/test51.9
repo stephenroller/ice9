@@ -1,17 +1,9 @@
-# if exp -> stm [] exp -> stm [] exp -> fi					fail
+# writes (2 >= 4);											fail
 
-if 
-true 
--> 
-; 
-; 
-[] 
-false 
--> 
-; 
-; 
-[] 
-true 
--> 
-fi	
-# missing stms
+writes 
+	(
+	2 
+	>= 
+	4
+	)
+	;

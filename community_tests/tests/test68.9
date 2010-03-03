@@ -1,13 +1,7 @@
-# fa id := exp exp -> stms af (missing to)					fail
+# if true -> ; [] true -> ; fi								succeed
 
-fa 
-foo 
-:=
- 0 
- -10 
- -> 
- writes 
- 'test'
- ; 
- af
- 
+if false -> 
+	write "first";
+[] true ->
+	write "second";
+fi

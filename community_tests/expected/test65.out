@@ -1,1 +1,1 @@
-line 4: syntax error near :=
+line 4: if and do tests must evaluate to a boolean

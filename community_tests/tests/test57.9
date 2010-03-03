@@ -1,11 +1,12 @@
-# if exp -> stms [] else -> stms [] else -> stms fi		fail
+# simple symbol table tests & := type checking (int, bool & str)succeed
 
-if true ->
-	; ;
-[] else ->
-	; ;
-[] else ->
-	; ;
-fi
+var a : int
+var b : bool
+var c : str
 
-# two else clauses
+a := 3;
+b := true;
+a := ? true;
+b := -false;
+c := "Hi";
+

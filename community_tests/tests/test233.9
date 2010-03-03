@@ -1,7 +1,13 @@
-#  a < b < c;				(non-assoc)						fail
+# proc overriding global scope w/ var						succeed
 
- a 
- < 
- b 
- < 
- c;				
+var bar : int
+
+proc foo()
+	var bar : bool
+	
+	bar := true;
+end
+
+foo();
+
+bar := 0;

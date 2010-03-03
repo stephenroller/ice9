@@ -1,13 +1,9 @@
-# if exp -> stm [] exp -> stm								fail
+# mixed expression tests									succeed
 
-if 
-true 
--> 
-; 
-; 
-[] 
-false 
--> 
-; 
-;		
-# missing fi
+1 + 1 = 2; 
+1 + 1 - 1 = 0;
+(true * false) = (4 = 5);
+true * false + true;
+1 / 3 * 4 = 12;
+1 % 3 / 4 + 4 - -3 >= ? -true;
+true + -(4 >= 5) != (4 = -5);

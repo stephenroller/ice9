@@ -1,7 +1,13 @@
-#  a != b != c;			(non-assoc)				fail
+# forward w/o proc										fail
 
- a 
- != 
- b 
- !=
-  c;		
+forward 
+	foo
+	(
+	a
+	: 
+	int
+	) 
+	: 
+	int
+
+;

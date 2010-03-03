@@ -1,3 +1,9 @@
-# var i : int[3][4][5][6], b,d : bool[1][2] ;				succeed
+# type foo : int type foo : bool ;						fail
 
-var i : int[3][4][5][6], b,d : bool[1][2] ;		
+type foo = int 
+type 
+	foo 
+	= 
+	bool				# duplicate typedef
+
+;

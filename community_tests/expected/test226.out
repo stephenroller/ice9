@@ -1,1 +1,1 @@
-line 6: syntax error near )
+line 7: number of parameters mismatch in call to foo

@@ -1,18 +1,5 @@
-# if exp -> stm [] exp -> stm [] exp stm fi				fail
+# writes 5+7; write " "; writes "Hi There";				succeed
 
-if 
-true 
--> 
-; 
-; 
-[] 
-false 
--> 
-; 
-; 
-[] 
-true 
-; 
-; 
-fi  
-# missing ->
+writes 5+7; 
+writes " "; 
+writes "Hi There";				

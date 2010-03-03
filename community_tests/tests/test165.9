@@ -1,3 +1,9 @@
-# 1 = 2;													succeed
+# ref to two parameters									succeed
 
-1 = 2;		
+proc foo (a, b : bool)
+	if a + b ->
+		write "Hi";
+	fi
+end
+
+foo(true, true);

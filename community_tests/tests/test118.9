@@ -1,3 +1,11 @@
-# forward foo (i : int) : bool ;							succeed
+# var a : int[2] a['j'] := 0;								fail
 
-forward foo (i : int) : bool ;	
+var a : int[2]
+
+a
+	[
+	'j'
+	] 
+	:= 
+	0
+	;

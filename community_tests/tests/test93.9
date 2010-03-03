@@ -1,3 +1,11 @@
-# proc foo (i : int, b bool) ; end ;						fail
+# break w/in inner of two loops							succeed
 
-proc foo (i : int, b bool) ; end ;	# missing :
+fa i := 0 to 1 ->
+
+	fa j := 0 to 1 ->
+	    break;				# this should only affect inner loop
+		write "inner";
+	af
+	
+	write "outer";
+af

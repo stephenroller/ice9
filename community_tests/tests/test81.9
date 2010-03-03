@@ -1,8 +1,11 @@
-# proc foo ( ; end ; (missing rparen)						fail
+# fa bool-id := 0 to 1 -> ; af								succeed
 
-proc 
-foo 
-( 
-; 
-end 
-;
+var b : bool
+
+fa b := 0 to 1 -> 
+	b + 10; 
+af
+
+if b -> 
+	write 'Done';
+fi

@@ -1,11 +1,15 @@
-# var i : int [ 6 ], ; (missing varlist)					fail
+# type foo = int[2] var a : foo a[0][0] := 0				fail
 
-var 
-i 
-: 
-int 
-[ 
-6 
-]
-, 
-; 
+type foo = int[2]
+var a : foo
+
+a
+	[
+	0
+	]
+	[
+	0
+	] 
+	:= 
+	0
+	;			# too many dereferences

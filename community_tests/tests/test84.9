@@ -1,10 +1,5 @@
-# proc foo (i : int) ; (missing end)						fail
+# fa i := 0 to ?true -> ; af								succeed
 
-proc 
-foo 
-(
-i 
-: 
-int
-) 
-; 
+fa i := 0 to ?true -> 
+	write i;
+af

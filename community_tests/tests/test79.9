@@ -1,8 +1,14 @@
-# proc () ; end ; (missing id)								
+# break w/ two do loops									succeed
 
-proc 
-(
-) 
-; 
-end 
-;
+var i : int
+
+i := 0;
+
+do true ->
+	do i < 3 ->
+		write i;
+		i := i + 1;
+	od
+	
+	break;
+od

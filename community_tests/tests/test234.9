@@ -1,7 +1,16 @@
-# a > b > c;				(non-assoc)						fail
+# proc overriding global type								succeed
 
-a 
-> 
-b 
-> 
-c;			
+type foo = bool
+
+var b : foo
+
+proc bar (b2 : foo)
+	type foo = int
+	
+	var i : foo
+	
+	i + 0;
+end
+
+b := true;
+

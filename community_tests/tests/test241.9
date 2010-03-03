@@ -1,3 +1,13 @@
-# 0 := 1;					(bad lvalue)					fail
+# test a lingering type ref								fail
 
-0 := 1;					
+proc foo ()
+	type bar = int[2]
+	
+end
+
+proc baz (b 
+			: 
+			bar
+			)
+	;
+end

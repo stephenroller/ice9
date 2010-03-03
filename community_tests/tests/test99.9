@@ -1,3 +1,9 @@
-# var i,j,k,l,m : int ;									succeed
+# type foo = int[3]; var foo : foo foo[0] := 0; ...		succeed
 
-var i,j,k,l,m : int ;	
+type foo = int[3]
+
+var foo : foo 
+
+foo[0] := 0; 
+foo[1] := 1; 
+foo[2] := 2; 

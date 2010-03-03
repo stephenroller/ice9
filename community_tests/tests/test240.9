@@ -1,11 +1,26 @@
-# a != 0 + b != 0;		(first 3 forms pass - last fails due to nonassoc)		succeed
+# double check := of aliased basic types					succeed
 
-true + false;
+type s = str
+type ss = s
+type i = int
+type ii = i
+type b = bool
+type bb = b
 
-a != 0 + false;
+var svar : str
+var ssvar : ss
 
-a != 0 + (b != 0);
+var ivar : int
+var iivar : ii
 
-a != 0 
-+ 
-b != 0;					
+var bvar : bool
+var bbvar : bb
+
+svar := ssvar;
+ssvar := svar;
+
+ivar := iivar;
+iivar = ivar;
+
+bvar = bbvar;
+bbvar = bvar;

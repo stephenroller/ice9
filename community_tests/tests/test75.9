@@ -1,3 +1,9 @@
-# proc foo () type bar = int[3] var i : int ; end stm				succeed
+# var a : int \n do a -> ; od								fail
 
-proc foo () type bar = int[3] var i : int ; end ;
+var a : int 
+
+do 
+	a 
+	-> 
+	; 
+od	

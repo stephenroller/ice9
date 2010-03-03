@@ -1,12 +1,9 @@
-# fa id := exp to -> stms af (missing exp)					fail
+# if true -> ; [] int -> ; fi								fail
 
-fa 
-foo 
-:= 
--1 
-to 
--> 
-write 
-0
-; 
-af
+if true ->
+	;
+[] 
+	1 
+	-> 
+	;
+fi

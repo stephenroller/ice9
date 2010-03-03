@@ -1,3 +1,11 @@
-# forward foo (i,j : int, b,d : bool) : bool ;			succeed
+# var a : int[2] a[true] := 0;							fail
 
-forward foo (i,j : int, b,d : bool) : bool ;	
+var a : int[2]
+
+a
+	[
+	true
+	] 
+	:= 
+	0
+	;

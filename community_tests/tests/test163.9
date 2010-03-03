@@ -1,3 +1,12 @@
-# 1/5;													succeed
+# forward & 2 procs w/ same name							fail
 
-1/5;								
+forward foo(a,b : int) : int
+
+proc foo (a,b : int) : int
+end
+
+proc 
+foo
+(a,b : int) : int
+end
+

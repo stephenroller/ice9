@@ -1,3 +1,8 @@
-# type foo = int[2][3] ;									succeed
+# != failure on disallowed type (arrays)					fail
 
-type foo = int[2][3] ;			
+var a,b : int[3]
+
+a 
+	!= 
+	b
+	;

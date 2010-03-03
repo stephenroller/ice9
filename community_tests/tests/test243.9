@@ -1,3 +1,14 @@
-# 9 + ? true;												succeed
+# type checking example from forum						succeed
+# this also tests the different symbol tables (e.g., proc foo (foo : foo))
 
-9 + ? true;			
+type foo = int[2][2][2]
+type bar = int[2][2]
+type baz = bar[2]
+
+var baz : baz
+
+proc foo (foo : foo)
+	;
+end
+
+foo(baz);

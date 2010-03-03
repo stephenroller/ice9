@@ -1,7 +1,9 @@
-# a >= b >= c;			(non-assoc)						fail
+# forward & proc have diff names							succeed
 
-a 
->= 
-b 
->= 
-c;			
+forward foo(a, b : int, c : bool, d : str)
+
+proc foo(e, f : int, g : bool, h : str)
+
+end
+
+foo(0, 1, true, "Hi");

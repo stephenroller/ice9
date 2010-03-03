@@ -1,1 +1,1 @@
-line 8: syntax error near ->
+line 6: if and do tests must evaluate to a boolean

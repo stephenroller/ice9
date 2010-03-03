@@ -1,3 +1,10 @@
-# proc foo () : int type bar = int[3] type baz = bool[1] ; end stm					succeed
+# var a : int \n a := 0; do a < 5 -> a := a + 1; od		succeed
 
-proc foo () : int type bar = int[3] type baz = bool[1]; end ;
+var a : int
+
+a := 0; 
+
+do a < 5 -> 
+	a := a + 1;
+	write a;
+od

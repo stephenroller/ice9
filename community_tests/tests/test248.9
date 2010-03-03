@@ -1,3 +1,14 @@
-# 9 --- 1;												succeed
+# test override of user defined type in a proc						succeed
 
-9 --- 1;				
+
+type foo = bool
+
+proc bar()
+	type foo = int
+	
+	var i : foo
+	
+	i + 0;
+end
+
+bar();

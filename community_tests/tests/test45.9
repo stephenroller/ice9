@@ -1,13 +1,4 @@
-# if exp -> stm [] exp stm fi								fail
+# unary - with int, bool									succeed
 
-if 
-true 
--> 
-; 
-; 
-[] 
-false 
-; 
-; 
-fi		
-# missing ->
+6 -- 3;
+true = -false;

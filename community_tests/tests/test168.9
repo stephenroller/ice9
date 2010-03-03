@@ -1,3 +1,12 @@
-# false * true;											succeed
+# double defined param									fail
 
-false * true;			
+proc foo (a : int
+			, 
+			a 
+			: 
+			bool
+			)
+	;
+end
+
+foo(1, true);

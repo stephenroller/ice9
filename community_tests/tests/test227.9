@@ -1,8 +1,13 @@
-# foo(i,);				(missing exp)					fail
+# proc call w/ too many params							fail
+
+proc foo(a : int)
+	;
+end
 
 foo
-(
-i
-,
-)
-;			
+	(
+	0
+	, 
+	1
+	)
+	;

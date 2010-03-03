@@ -1,20 +1,7 @@
-# proc foo (i,j : int, b, : bool) ; end ;					fail
+# use a new type name										succeed 
 
-proc 
-foo 
-(
-i
-, 
-j 
-: 
-int
-, 
-b
-,
- : 
- bool
- ) 
- ; 
- end 
- ;	
- # missing second id
+type foo = int
+
+var a : foo
+
+;

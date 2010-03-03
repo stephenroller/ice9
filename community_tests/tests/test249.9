@@ -1,4 +1,19 @@
-# 9 +- 1; 9 -+ 1;					(no unary +)			fail
+# override int, bool & str in a proc						succeed
 
-9 +- 1; 
-9 -+ 1;				
+proc evil()
+	type temp = int
+	type int = bool
+	type bool = str
+	type str = temp
+	
+	var b : int
+	var i : str
+	var s : bool
+		
+	?b;
+	i + 0;
+	int(s);
+
+end
+
+evil();

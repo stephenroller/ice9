@@ -1,3 +1,7 @@
-# type = int ;		(missing id)						fail
+# type foo = int[2] type bar = foo[2] var b : bar b[0][0] := 0; succeed
 
-type = int ;		
+type foo = int[2] 
+type bar = foo[2] 
+var b : bar 
+
+b[0][0] := 0; 

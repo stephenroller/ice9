@@ -1,1 +1,1 @@
-line 3: syntax error near ]
+line 4: proc int is already defined in the current scope

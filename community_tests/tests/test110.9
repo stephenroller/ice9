@@ -1,3 +1,18 @@
-# var i : int [6], d ; (missing colon & typeid)			fail
+# type foo = int[2] var a : foo a[0][0][0] := 0			fail
 
-var i : int [6], d ;
+type foo = int[2]
+var a : foo
+
+a
+	[
+	0
+	]
+	[
+	0
+	]
+	[
+	0
+	] 
+	:= 
+	0
+	;			# too many dereferences

@@ -1,11 +1,5 @@
-# fa id := to exp -> stms af (missing exp)					fail
+# if (int < int) -> ; fi									succeed
 
-fa 
-foo 
-:= 
-to
-0 
--> 
-; 
-; 
-af
+if (0 < 1) ->
+	write "first";
+fi

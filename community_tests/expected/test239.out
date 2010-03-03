@@ -1,1 +1,1 @@
-line 6: syntax error near !=
+line 7: binary operator := only defined for int, bool and str
