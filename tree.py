@@ -79,8 +79,9 @@ class Tree():
     
     def __str__(self, tab=""):
         out = []
-        print_attr = ('node_type', 'value', 'ice9_type')
-        as_str = '\t'.join(s + ": " + str(getattr(self, s)) for s in print_attr if hasattr(self, s))
+        print_attr = ('line', 'node_type', 'value', 'ice9_type')
+        as_str = '\t'.join(s + ": " + str(getattr(self, s)) 
+                                          for s in print_attr if hasattr(self, s))
         out.append(tab + as_str)
         for child in self.children:
             out.append(child.__str__(tab + "- "))
