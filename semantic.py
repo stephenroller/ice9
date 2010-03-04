@@ -235,13 +235,16 @@ def array_reference(arrnode):
 @semantic_check
 def assignment(setnode):
     cs = setnode.children
-    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type), \
-           ("Types " + cs[0].ice9_type + " and " + cs[1].ice9_type +
-            " are incompatible.")
-    assert cs[1].ice9_type != 'nil', ' '.join(
-            'Cannot assign variable', cs[1].value)
-    assert first_definition(ice9_types, cs[0].ice9_type) == "base", ''.join(
-            "Cannot assign to non-base type ", cs[0].ice9_type)
+    assert cs[0].node_type == 'ident' or cs[0].node_type == 'array_reference', (
+           "Cannot assign to %s." % setnode.value)
+    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type), (
+           "incompatible assignment %s and %s." % 
+           (cs[0].ice9_type, cs[1].ice9_type))
+    assert first_definition(ice9_symbols, cs[0].value) != 'const', (
+            "cannot assign to fa variable %s" % cs[0].value)
+    assert cs[1].ice9_type != 'nil', ('Cannot assign variable %s' % cs[1].value)
+    assert first_definition(ice9_types, cs[0].ice9_type) == "base", (
+            "Cannot assign to non-base type %s" % cs[0].ice9_type)
     
     check_and_set_type(setnode, 'nil')
 
