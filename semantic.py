@@ -19,6 +19,7 @@ ice9_types = [{
     'int': 'base',
     'str': 'base',
     'bool': 'base',
+    'const': 'int',
 }]
 
 ice9_symbols = [ { } ]
@@ -90,7 +91,7 @@ def check_and_set_type(node, check_type):
     If the types don't match, raise an exception.
     """
     if hasattr(node, 'ice9_type'):
-        if equivalent_types(node.ice_type, check_type):
+        if equivalent_types(node.ice9_type, check_type):
             return True
         else:
             # FIXME: better error message
@@ -151,9 +152,6 @@ def define_var(varnode):
     varname = varnode.value
     assert len(varnode.children) == 0
     
-    # definitions = list(find_all_definitions(ice9_symbols, varname))
-    # assert len(definitions) == 0, 'var ' + varname + ' is already defined.'
-    
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
 
@@ -186,9 +184,7 @@ def operator(opnode):
         assert len(opnode.children) == 0, op + " takes no arguments."
     
         if op == 'break':
-            # check loop here
-            pass
-        
+            assert opnode.loopcount > 0, "break outside a loop."
     
     elif op == 'write' or op == 'writes':
         check_and_set_type(opnode, 'nil')
@@ -215,9 +211,13 @@ def operator(opnode):
         check_and_set_type(opnode, 'int')
     
     elif op in ('=', '!=', '-', '+', '*'):
-        assert opnode.children[0].ice9_type == opnode.children[1].ice9_type, \
-            "arguments of " + op + " must be the same."
-        assert opnode.children[0].ice9_type in ('int', 'bool', 'str')
+        left, right = opnode.children[0:2]
+        assert any(equivalent_types(left.ice9_type, t)
+                   for t in ('int', 'bool', 'str')), (
+               "type %s incompatable with operator %s" % 
+               (left.ice9_type, op))
+        assert equivalent_types(left.ice9_type, right.ice9_type), (
+            "arguments of %s must be the same." % op)
         check_and_set_type(opnode, opnode.children[0].ice9_type)
         
 @semantic_check
@@ -297,25 +297,43 @@ def synthesized_proc(procnode):
     leave_scope()
 
 @semantic_check
-def notype(prognode):
-    check_and_set_type(prognode, 'nil')
+def notype(node):
+    check_and_set_type(node, 'nil')
 
 @semantic_check
 def proc_call(pcnode):
     from itertools import izip_longest
-    pctype = first_definition(ice9_procs, pcnode.value)
-    for child, param in izip_longest(pcnode.children, pctype[2:]):
-        assert equivalent_types(child.ice9_type, param), str(
-            "parameter " + " takes a " + param.ice9_type +
-            ", not a " + child.ice9_type)
+    proctype = first_definition(ice9_procs, pcnode.value)
+    for child, param in izip_longest(pcnode.children, proctype[2:]):
+        assert equivalent_types(child.ice9_type, param), (
+            "parameter %s takes a %s, not a %s" % 
+            (param[1], param.ice9_type, child.ice9_type))
     
-    check_and_set_type(pcnode, pctype[1])
+    check_and_set_type(pcnode, proctype[1])
+
+def for_loop_inherited(fornode):
+    add_scope()
+    fornode.loopcount += 1
+    varnode = fornode.children[0]
+    assert varnode.node_type == 'ident'
+    
+    define(ice9_symbols, varnode.value, 'const')
+    varnode.ice9_type = 'const'
+    
+def for_loop_synthesized(fornode):
+    assert equivalent_types(fornode.children[1].ice9_type, 'int'), \
+            fornode.children[1].value + ' is not an int.'
+    assert equivalent_types(fornode.children[2].ice9_type, 'int'), \
+            fornode.children[2].value + ' is not an int.'
+    
+    
 
 inherited_callbacks = {
     'define_type': define_type,
     'define': define_var,
     'proc': inherited_proc,
     'forward': forward,
+    'for_loop': for_loop_inherited,
 }
 
 sythenisized_callbacks = {
@@ -327,9 +345,15 @@ sythenisized_callbacks = {
     'proc_call': proc_call,
     'program': notype,
     'statements': notype,
+    'for_loop': for_loop_synthesized,
 }
 
 def check_semantics(ast):
+    if ast.parent is None:
+        ast.loopcount = 0
+    else:
+        ast.loopcount = ast.parent.loopcount
+    
     if ast.node_type in inherited_callbacks:
         callback = inherited_callbacks[ast.node_type]
         callback(ast)

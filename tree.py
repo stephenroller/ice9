@@ -32,6 +32,11 @@ class Tree():
             assert not hasattr(self, 'ice9_type')
             setattr(self, 'ice9_type', self.children[0].ice9_type)
         
+        if hasattr(self.children[0], 'loopcount'):
+            assert not hasattr(self, 'loopcount') or \
+                   self.loopcount == self.children[0].loopcount
+            setattr(self, 'loopcount', self.children[0].loopcount)
+        
         self.line = self.children[0].line
         self.node_type = self.children[0].node_type
         self.value = self.children[0].value
