@@ -13,10 +13,12 @@ class Ice9SyntaxError(Ice9Error):
 class TokenStream:
     line = 1
     stream = None
-    ast = Tree(node_type='rule-expansion', value='root')
-    current_node = ast
+    ast = None
+    current_node = None
     
     def __init__(self, token_stream):
+        self.ast = Tree(node_type='rule-expansion', value='root')
+        self.current_node = self.ast
         self.stream = token_stream
         # remove the SOF token
         self.next_type_is('SOF')

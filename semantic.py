@@ -189,8 +189,9 @@ def operator(opnode):
     elif op == 'write' or op == 'writes':
         check_and_set_type(opnode, 'nil')
         assert len(opnode.children) == 1, op + " takes one parameter."
-        assert opnode.children[0].ice9_type in ('bool', 'int', 'str'), \
-            op + ' cannot use type ' + opnode.children[0].ice9_type
+        assert any(equivalent_types(t, opnode.children[0].ice9_type)
+                   for t in ('bool', 'int', 'str')), (
+               'cannot %s %s' % (op, opnode.children[0].ice9_type))
     
     elif len(opnode.children) == 1 and op == '-':
         assert opnode.children[0].ice9_type in ('bool', 'int')
@@ -311,6 +312,7 @@ def proc_call(pcnode):
     
     check_and_set_type(pcnode, proctype[1])
 
+@semantic_check
 def for_loop_inherited(fornode):
     add_scope()
     fornode.loopcount += 1
@@ -319,13 +321,14 @@ def for_loop_inherited(fornode):
     
     define(ice9_symbols, varnode.value, 'const')
     varnode.ice9_type = 'const'
-    
+
+@semantic_check    
 def for_loop_synthesized(fornode):
+    check_and_set_type(fornode, 'nil')
     assert equivalent_types(fornode.children[1].ice9_type, 'int'), \
             fornode.children[1].value + ' is not an int.'
     assert equivalent_types(fornode.children[2].ice9_type, 'int'), \
             fornode.children[2].value + ' is not an int.'
-    
     
 
 inherited_callbacks = {

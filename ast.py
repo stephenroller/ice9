@@ -326,14 +326,10 @@ def parse2ast(parse_tree):
                 assert node.parent.children.pop(0) == node
                 
         elif node.node_type == 'rule-expansion':
-            
             if len(node.children) == 0:
                 # Empty node, let's just kill it and go onto the next
                 node.kill()
                 continue
-            
-            elif node.value in transform_rules:
-                transform_rules[node.value](node)
             
             elif len(node.children) == 2:
                 
@@ -354,6 +350,7 @@ def parse2ast(parse_tree):
                         p.children = node.children[1:]
                         for n in p.children:
                             n.parent = p
+                        continue
                 
                 # let's check for those binary operators
                 elif (node.children[0].node_type == 'token' and 
@@ -374,6 +371,10 @@ def parse2ast(parse_tree):
                         p.children = [left, right]
                         left.parent = p
                         right.parent = p
+                        continue
+            
+            if node.value in transform_rules:
+                transform_rules[node.value](node)
+            
 
-    
     return parse_tree
