@@ -174,6 +174,10 @@ def operator(opnode):
               opnode,
               'cannot %s %s' % (op, opnode.children[0].ice9_type))
     
+    elif op == 'read':
+        check_and_set_type(opnode, 'int')
+        check(len(opnode.children) == 0, opnode, 'read takes no parameters.')
+    
     elif len(opnode.children) == 1 and op == '-':
         check(opnode.children[0].ice9_type in ('bool', 'int'),
               opnode, 'incompatible type to unary operator %s' % op)
@@ -197,11 +201,13 @@ def operator(opnode):
         check_and_set_type(opnode, 'int')
     
     elif op in ('=', '!=', '-', '+', '*'):
+
         left, right = opnode.children[0:2]
         check(any(equivalent_types(left.ice9_type, t)
                  for t in ('int', 'bool')),
               opnode,
               "incompatible types to binary operator %s" % op)
+        
         check(equivalent_types(left.ice9_type, right.ice9_type),
               opnode,
               "incompatible types to binary operator %s" % op)

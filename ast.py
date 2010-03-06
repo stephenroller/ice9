@@ -320,7 +320,7 @@ def parse2ast(parse_tree):
             elif node.token_type == 'ident':
                 node.node_type = 'ident'
             
-            elif node.value in ('write', 'writes', 'break', 'exit', 'return'):
+            elif node.value in ('write', 'writes', 'break', 'exit', 'return', 'read'):
                 node.parent.node_type = 'operator'
                 node.parent.value = node.value
                 assert node.parent.children.pop(0) == node
