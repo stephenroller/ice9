@@ -76,7 +76,8 @@ def make_community_test(test_id):
             sys.stderr = realstderr
             out = fakestderr.getvalue()
             expected = file('community_tests/expected/test%d.out' % test_id).read()
-            assert out == expected, "output '%s' != expected '%s'" % (out, expected)
+            assert out.rstrip() == expected.rstrip(), (
+                "output '%s' != expected '%s'" % (out.rstrip(), expected.rstrip()))
     
     return CommunityTest
                 
@@ -141,7 +142,7 @@ def make_community_test(test_id):
 # test_multi_assignment = test_parse_true(stm, 'x := y := z;')
 
 # for i in xrange(1, 256):
-for i in xrange(90,100):
+for i in xrange(99,101):
     # Load all the community tests
     globals()['community_test_%d' % i] = make_community_test(i)
 

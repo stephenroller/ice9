@@ -10,24 +10,15 @@ class Ice9SemanticError(Ice9Error):
         self.line = node.line
         self.error = error_message
 
-ice9_procs = [ {
-    'int': ['proc', 'int', ["param", "num", 'str']]
-} ]
+ice9_procs = None
 
-ice9_types = [{
-    'nil': 'base',
-    'int': 'base',
-    'str': 'base',
-    'bool': 'base',
-    'const': 'int',
-}]
+ice9_types = None
 
-ice9_symbols = [ { } ]
-
+ice9_symbols = None
 
 def find_all_definitions(scopes, name):
     """Returns an iterator on all the definitions of name in scopes."""
-    return (scope[name] for scope in scopes if name in scope)
+    return [scope[name] for scope in scopes if name in scope]
 
 def define(scopes, name, value):
     """Define name to be value in the latest scope of scopes."""
@@ -67,7 +58,7 @@ def expand_type(typeval):
             else:
                 return expand_type(subtype)
         else:
-            raise Exception, "Dead type!"
+            assert False, typeval + " is not defined."
     elif type(typeval) == list:
         if typeval[0] == "array":
             return ["array", expand_type(typeval[1])] + typeval[2:]
@@ -103,28 +94,21 @@ def check_and_set_type(node, check_type):
 
 ##
 
+def check(result, node, errormsg):
+    if not result:
+        raise Ice9SemanticError(node, errormsg)
 
-def semantic_check(r):
-    def modified(node):
-        try:
-            return r(node)
-        except AssertionError, e:
-            raise Ice9SemanticError(node, e)
-    
-    modified.func_name = r.func_name
-    return modified
-
-@semantic_check
 def typenode_to_type(tnode):
     full_type = tnode.value
     for dimension_size in tnode.children:
-        assert (dimension_size.node_type == 'literal'), "Array sizes must be literal ints."
-        assert dimension_size.ice9_type == 'int', "Array sizes must be literal ints."
+        check(dimension_size.node_type == 'literal', dimension_size, 
+            "Array sizes must be literal ints.")
+        check(dimension_size.ice9_type == 'int', dimension_size, 
+            "Array sizes must be literal ints.")
         full_type = ["array", full_type, dimension_size.value]
     
     return full_type
 
-@semantic_check
 def define_type(dtnode):
     # process the type early
     assert len(dtnode.children) == 1
@@ -135,13 +119,12 @@ def define_type(dtnode):
     typename = dtnode.value
     assert len(dtnode.children) == 0
     
-    definitions = list(find_all_definitions(ice9_types, typename))
-    assert len(definitions) == 0, 'type ' + typename + ' is already defined.'
+    definitions = find_all_definitions(ice9_types, typename)
+    check(len(definitions) == 0, dtnode, 'type ' + typename + ' is already defined.')
     
     define(ice9_types, typename, ice9_type)
     dtnode.kill()
 
-@semantic_check
 def define_var(varnode):
     # Need to find the var's type
     assert len(varnode.children) == 1
@@ -155,7 +138,6 @@ def define_var(varnode):
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
 
-@semantic_check
 def param(paramnode):
     assert len(paramnode.children) == 1
     assert paramnode.children[0].node_type == 'type'
@@ -167,31 +149,30 @@ def param(paramnode):
     paramnode.ice9_type = ice9_type
     paramnode.children = []
     
-@semantic_check
 def ident(identnode):
     # represents a symbol lookup
     defn = None
     defn = first_definition(ice9_symbols, identnode.value)
-    assert defn is not None, identnode.value + " is not defined."
+    check(defn is not None, identnode, identnode.value + " is not defined.")
     check_and_set_type(identnode, defn)
 
-@semantic_check
 def operator(opnode):
     op = opnode.value
     
     if op in ('break', 'return', 'exit'):
         check_and_set_type(opnode, 'nil')
-        assert len(opnode.children) == 0, op + " takes no arguments."
+        check(len(opnode.children) == 0, opnode, op + " takes no arguments.")
     
         if op == 'break':
-            assert opnode.loopcount > 0, "break outside a loop."
+            check(opnode.loopcount > 0, opnode, "break outside a loop.")
     
     elif op == 'write' or op == 'writes':
         check_and_set_type(opnode, 'nil')
-        assert len(opnode.children) == 1, op + " takes one parameter."
-        assert any(equivalent_types(t, opnode.children[0].ice9_type)
-                   for t in ('bool', 'int', 'str')), (
-               'cannot %s %s' % (op, opnode.children[0].ice9_type))
+        check(len(opnode.children) == 1, opnode, op + " takes one parameter.")
+        check(any(equivalent_types(t, opnode.children[0].ice9_type)
+                for t in ('bool', 'int', 'str')),
+              opnode,
+              'cannot %s %s' % (op, opnode.children[0].ice9_type))
     
     elif len(opnode.children) == 1 and op == '-':
         assert opnode.children[0].ice9_type in ('bool', 'int')
@@ -213,15 +194,15 @@ def operator(opnode):
     
     elif op in ('=', '!=', '-', '+', '*'):
         left, right = opnode.children[0:2]
-        assert any(equivalent_types(left.ice9_type, t)
-                   for t in ('int', 'bool', 'str')), (
-               "type %s incompatable with operator %s" % 
-               (left.ice9_type, op))
-        assert equivalent_types(left.ice9_type, right.ice9_type), (
-            "arguments of %s must be the same." % op)
+        check(any(equivalent_types(left.ice9_type, t)
+                 for t in ('int', 'bool', 'str')),
+              opnode,
+              "type %s incompatable with operator %s" % (left.ice9_type, op))
+        check(equivalent_types(left.ice9_type, right.ice9_type),
+              opnode,
+              "arguments of %s must be the same." % op)
         check_and_set_type(opnode, opnode.children[0].ice9_type)
         
-@semantic_check
 def array_reference(arrnode):
     vartype = first_definition(ice9_symbols, arrnode.value)
     assert vartype is not None
@@ -233,23 +214,29 @@ def array_reference(arrnode):
     
     check_and_set_type(arrnode, vartype)
 
-@semantic_check
 def assignment(setnode):
     cs = setnode.children
-    assert cs[0].node_type == 'ident' or cs[0].node_type == 'array_reference', (
-           "Cannot assign to %s." % setnode.value)
-    assert equivalent_types(cs[0].ice9_type, cs[1].ice9_type), (
-           "incompatible assignment %s and %s." % 
-           (cs[0].ice9_type, cs[1].ice9_type))
-    assert first_definition(ice9_symbols, cs[0].value) != 'const', (
-            "cannot assign to fa variable %s" % cs[0].value)
-    assert cs[1].ice9_type != 'nil', ('Cannot assign variable %s' % cs[1].value)
-    assert first_definition(ice9_types, cs[0].ice9_type) == "base", (
-            "Cannot assign to non-base type %s" % cs[0].ice9_type)
+    
+    check(cs[0].node_type == 'ident' or cs[0].node_type == 'array_reference',
+          setnode, "Cannot assign to %s." % setnode.value)
+    
+    check(equivalent_types(cs[0].ice9_type, cs[1].ice9_type),
+          setnode,
+          "incompatible assignment %s and %s." % (cs[0].ice9_type, cs[1].ice9_type))
+    
+    check(first_definition(ice9_symbols, cs[0].value) != 'const',
+          setnode, "cannot assign to fa variable %s" % cs[0].value)
+    
+    check(cs[1].ice9_type != 'nil', 
+          setnode,
+          'Cannot assign variable %s' % cs[1].value)
+    
+    check(first_definition(ice9_types, cs[0].ice9_type) == "base",
+          setnode,
+          "Cannot assign to non-base type %s" % cs[0].ice9_type)
     
     check_and_set_type(setnode, 'nil')
 
-@semantic_check
 def forward(forwardnode):
     if len(forwardnode.children) >= 1 and forwardnode.children[0].node_type == 'type':
         return_type = typenode_to_type(forwardnode.children.pop(0))
@@ -266,7 +253,6 @@ def forward(forwardnode):
     define(ice9_procs, forwardnode.value, forwardtype)
     forwardnode.kill()
 
-@semantic_check
 def inherited_proc(procnode):
     add_scope()
     
@@ -287,32 +273,29 @@ def inherited_proc(procnode):
     check_and_set_type(procnode, proctype)
     forward_defn_type = first_definition(ice9_procs, procname)
     if forward_defn_type is not None:
-        assert equivalent_types(proctype, forward_defn_type), \
-               "proc " + procname + " does not match the signature of its forward."
+        check(equivalent_types(proctype, forward_defn_type),
+              procnode,
+              "proc " + procname + " does not match the signature of its forward.")
         forward_defn_type[0] = "proc"
     else:
         define_type(ice9_procs, procname, proctype)
 
-@semantic_check
 def synthesized_proc(procnode):
     leave_scope()
 
-@semantic_check
 def notype(node):
     check_and_set_type(node, 'nil')
 
-@semantic_check
 def proc_call(pcnode):
     from itertools import izip_longest
     proctype = first_definition(ice9_procs, pcnode.value)
     for child, param in izip_longest(pcnode.children, proctype[2:]):
-        assert equivalent_types(child.ice9_type, param), (
-            "parameter %s takes a %s, not a %s" % 
-            (param[1], param.ice9_type, child.ice9_type))
+        check(equivalent_types(child.ice9_type, param),
+              pcnode,
+              "parameter %s takes a %s, not a %s" % (param[1], param.ice9_type, child.ice9_type))
     
     check_and_set_type(pcnode, proctype[1])
 
-@semantic_check
 def for_loop_inherited(fornode):
     add_scope()
     fornode.loopcount += 1
@@ -322,13 +305,14 @@ def for_loop_inherited(fornode):
     define(ice9_symbols, varnode.value, 'const')
     varnode.ice9_type = 'const'
 
-@semantic_check    
 def for_loop_synthesized(fornode):
     check_and_set_type(fornode, 'nil')
-    assert equivalent_types(fornode.children[1].ice9_type, 'int'), \
-            fornode.children[1].value + ' is not an int.'
-    assert equivalent_types(fornode.children[2].ice9_type, 'int'), \
-            fornode.children[2].value + ' is not an int.'
+    check(equivalent_types(fornode.children[1].ice9_type, 'int'),
+          fornode,
+          fornode.children[1].value + ' is not an int.')
+    check(equivalent_types(fornode.children[2].ice9_type, 'int'),
+          fornode,
+          fornode.children[2].value + ' is not an int.')
     
 
 inherited_callbacks = {
@@ -351,10 +335,8 @@ sythenisized_callbacks = {
     'for_loop': for_loop_synthesized,
 }
 
-def check_semantics(ast):
-    if ast.parent is None:
-        ast.loopcount = 0
-    else:
+def semantic_helper(ast):
+    if ast.parent is not None:
         ast.loopcount = ast.parent.loopcount
     
     if ast.node_type in inherited_callbacks:
@@ -362,13 +344,35 @@ def check_semantics(ast):
         callback(ast)
     
     for n in list(ast.children):
-        check_semantics(n)
+        semantic_helper(n)
     
     if ast.node_type in sythenisized_callbacks:
         callback = sythenisized_callbacks[ast.node_type]
         callback(ast)
     
     return True
+
+def check_semantics(ast):
+    global ice9_procs, ice9_types, ice9_symbols
+    
+    ice9_procs = [dict({
+        'int': ['proc', 'int', ["param", "num", 'str']]
+    })]
+
+    ice9_types = [dict({
+        'nil': 'base',
+        'int': 'base',
+        'str': 'base',
+        'bool': 'base',
+        'const': 'int',
+    })]
+    
+    ice9_symbols = [ dict() ]
+    
+    ast.loopcount = 0
+    
+    return semantic_helper(ast)
+    
 
 if __name__ == '__main__':
     with file('test.txt') as f:
