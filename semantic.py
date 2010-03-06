@@ -209,8 +209,8 @@ def array_reference(arrnode):
     assert vartype is not None
     vartype = expand_type(vartype)
     for c in arrnode.children:
-        assert c.ice9_type == 'int'
-        assert vartype[0] == "array"
+        check(equivalent_types(c.ice9_type, 'int'), c, "array references must be an int")
+        check(vartype[0] == "array", arrnode, "dereferenced an array too many times")
         vartype = vartype[1]
     
     check_and_set_type(arrnode, vartype)
