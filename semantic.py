@@ -58,7 +58,7 @@ def expand_type(typeval):
             else:
                 return expand_type(subtype)
         else:
-            assert False, typeval + " is not defined."
+            raise ValueError(typeval + ' is not defined')
     elif type(typeval) == list:
         if typeval[0] == "array":
             return ["array", expand_type(typeval[1])] + typeval[2:]
@@ -164,7 +164,7 @@ def operator(opnode):
         check(len(opnode.children) == 0, opnode, op + " takes no arguments.")
     
         if op == 'break':
-            check(opnode.loopcount > 0, opnode, "break outside a loop.")
+            check(opnode.loopcount > 0, opnode, "breaks may only appear within a loop")
     
     elif op == 'write' or op == 'writes':
         check_and_set_type(opnode, 'nil')
@@ -175,7 +175,8 @@ def operator(opnode):
               'cannot %s %s' % (op, opnode.children[0].ice9_type))
     
     elif len(opnode.children) == 1 and op == '-':
-        assert opnode.children[0].ice9_type in ('bool', 'int')
+        check(opnode.children[0].ice9_type in ('bool', 'int'),
+              opnode, 'incompatible type to unary operator %s' % op)
         check_and_set_type(opnode, opnode.children[0].ice9_type)
     
     elif len(opnode.children) == 1 and op == '?':
@@ -266,6 +267,7 @@ def inherited_proc(procnode):
     
     if procnode.children[0].node_type == 'type':
         rettype = typenode_to_type(procnode.children.pop(0))
+        define(ice9_symbols, procname, rettype)
     else:
         rettype = 'nil'
     proctype.insert(1, rettype)
@@ -279,6 +281,7 @@ def inherited_proc(procnode):
         forward_defn_type[0] = "proc"
     else:
         define_type(ice9_procs, procname, proctype)
+    
 
 def synthesized_proc(procnode):
     leave_scope()
