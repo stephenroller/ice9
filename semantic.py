@@ -186,24 +186,29 @@ def operator(opnode):
     
     elif op in ('<', '<=', '>', '>='):
         for c in opnode.children:
-            check(c.ice9_type == 'int', opnode, c.value + " is not an int.")
+            check(c.ice9_type == 'int', opnode, 
+                  "incompatible types to binary operator %s" % op)
         check_and_set_type(opnode, 'bool')
    
     elif op in ('/', '%'):
         for c in opnode.children:
-            assert c.ice9_type == 'int', c.value + " is not an int."
+            check(c.ice9_type == 'int', opnode,
+                  "incompatible types to binary operator %s" % op)
         check_and_set_type(opnode, 'int')
     
     elif op in ('=', '!=', '-', '+', '*'):
         left, right = opnode.children[0:2]
         check(any(equivalent_types(left.ice9_type, t)
-                 for t in ('int', 'bool', 'str')),
+                 for t in ('int', 'bool')),
               opnode,
-              "type %s incompatable with operator %s" % (left.ice9_type, op))
+              "incompatible types to binary operator %s" % op)
         check(equivalent_types(left.ice9_type, right.ice9_type),
               opnode,
               "incompatible types to binary operator %s" % op)
-        check_and_set_type(opnode, opnode.children[0].ice9_type)
+        if op == '=' or op == '!=':
+            check_and_set_type(opnode, 'bool')
+        else:
+            check_and_set_type(opnode, opnode.children[0].ice9_type)
         
 def array_reference(arrnode):
     vartype = first_definition(ice9_symbols, arrnode.value)
@@ -225,7 +230,7 @@ def assignment(setnode):
     
     check(equivalent_types(cs[0].ice9_type, cs[1].ice9_type),
           setnode,
-          "incompatible types to binary operator :=" % (cs[0].ice9_type, cs[1].ice9_type))
+          "incompatible types to binary operator :=")
     
     check(first_definition(ice9_symbols, cs[0].value) != 'const',
           setnode, "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)
@@ -282,7 +287,7 @@ def inherited_proc(procnode):
               "proc " + procname + " does not match the signature of its forward.")
         forward_defn_type[0] = "proc"
     else:
-        define_type(ice9_procs, procname, proctype)
+        define(ice9_procs, procname, proctype)
     
 
 def synthesized_proc(procnode):
@@ -325,13 +330,13 @@ def do_loop(donode):
           "if and do tests must evaluate to a boolean")
 
 def cond(ifnode):
-    if (ifnode.children % 2 == 1): # odd, has an else statement
-        pass
-    
-    for i in xrange(len(ifnode) / 2):
-        check(equivalent_types(ifnode.children[2*i], 'bool'),
+    for i in xrange(len(ifnode.children) / 2):
+        check(equivalent_types(ifnode.children[2*i].ice9_type, 'bool'),
               ifnode.children[2*i],
               'if and do tests must evaluate to a boolean')
+    
+    check(len(ifnode.children) > 1, ifnode, 'if and do tests must evaluate to a boolean')
+
 
 inherited_callbacks = {
     'define_type': define_type,
