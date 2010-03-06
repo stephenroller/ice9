@@ -306,7 +306,7 @@ def proc_call(pcnode):
     for child, param in izip_longest(pcnode.children, proctype[2:]):
         check(equivalent_types(child.ice9_type, param),
               pcnode,
-              "parameter %s takes a %s, not a %s" % (param[1], param, child.ice9_type))
+              "parameter type mismatch")
     
     check_and_set_type(pcnode, proctype[1])
 
