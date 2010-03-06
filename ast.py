@@ -169,7 +169,7 @@ def ice9_do(do_node):
     assert do_node.children.pop(0).value == 'do'
     assert do_node.children.pop(1).value == '->'
     assert do_node.children.pop(-1).value == 'od'
-    do_node.node_type = 'while_loop'
+    do_node.node_type = 'do_loop'
     do_node.value = ''
 
 # declaration list

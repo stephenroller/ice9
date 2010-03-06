@@ -316,7 +316,20 @@ def for_loop_synthesized(fornode):
     check(equivalent_types(fornode.children[2].ice9_type, 'int'),
           fornode,
           fornode.children[2].value + ' is not an int.')
+
+def do_loop(donode):
+    check(equivalent_types(donode.children[0].ice9_type, 'bool'),
+          donode.children[0],
+          "if and do tests must evaluate to a boolean")
+
+def cond(ifnode):
+    if (ifnode.children % 2 == 1): # odd, has an else statement
+        pass
     
+    for i in xrange(len(ifnode) / 2):
+        check(equivalent_types(ifnode.children[2*i], 'bool'),
+              ifnode.children[2*i],
+              'if and do tests must evaluate to a boolean')
 
 inherited_callbacks = {
     'define_type': define_type,
@@ -336,6 +349,8 @@ sythenisized_callbacks = {
     'program': notype,
     'statements': notype,
     'for_loop': for_loop_synthesized,
+    'do_loop': do_loop,
+    'cond': cond
 }
 
 def semantic_helper(ast):
