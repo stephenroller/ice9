@@ -201,10 +201,8 @@ def operator(opnode):
         check_and_set_type(opnode, 'int')
     
     elif op in ('=', '!=', '-', '+', '*'):
-
         left, right = opnode.children[0:2]
-        check(any(equivalent_types(left.ice9_type, t)
-                 for t in ('int', 'bool')),
+        check(any(equivalent_types(left.ice9_type, t) for t in ('int', 'bool')),
               opnode,
               "incompatible types to binary operator %s" % op)
         
@@ -308,7 +306,7 @@ def proc_call(pcnode):
     for child, param in izip_longest(pcnode.children, proctype[2:]):
         check(equivalent_types(child.ice9_type, param),
               pcnode,
-              "parameter %s takes a %s, not a %s" % (param[1], param.ice9_type, child.ice9_type))
+              "parameter %s takes a %s, not a %s" % (param[1], param, child.ice9_type))
     
     check_and_set_type(pcnode, proctype[1])
 
@@ -408,6 +406,8 @@ def check_semantics(ast):
 if __name__ == '__main__':
     with file('test.txt') as f:
         ast = parse2ast(parse(f.read()))
+        print ""
+        print ""
         print check_semantics(ast)
         print '%' * 80
         print ice9_procs
