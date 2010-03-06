@@ -120,7 +120,7 @@ def define_type(dtnode):
     assert len(dtnode.children) == 0
     
     definitions = find_all_definitions(ice9_types, typename)
-    check(len(definitions) == 0, dtnode.children[0], 
+    check(len(definitions) == 0, dtnode, 
           'type ' + typename + ' is already defined in the current scope')
     
     define(ice9_types, typename, ice9_type)
@@ -243,7 +243,7 @@ def assignment(setnode):
           setnode,
           'Cannot assign variable %s' % cs[1].value)
     
-    check(first_definition(ice9_types, cs[0].ice9_type) == "base",
+    check(expand_type(cs[0].ice9_type) in ("int", "bool", "str"),
           setnode,
           "Cannot assign to non-base type %s" % cs[0].ice9_type)
     
