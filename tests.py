@@ -141,7 +141,7 @@ def make_community_test(test_id):
 # # technically should be a syntax error, but I plan on handling this semantically.
 # test_multi_assignment = test_parse_true(stm, 'x := y := z;')
 
-for i in xrange(1, 256):
+for i in xrange(1, 257):
     # Load all the community tests
     globals()['community_test_%d' % i] = make_community_test(i)
 
