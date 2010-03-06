@@ -120,7 +120,8 @@ def define_type(dtnode):
     assert len(dtnode.children) == 0
     
     definitions = find_all_definitions(ice9_types, typename)
-    check(len(definitions) == 0, dtnode, 'type ' + typename + ' is already defined in the current scope')
+    check(len(definitions) == 0, dtnode.children[0], 
+          'type ' + typename + ' is already defined in the current scope')
     
     define(ice9_types, typename, ice9_type)
     dtnode.kill()
@@ -140,7 +141,6 @@ def define_var(varnode):
 
 def param(paramnode):
     assert len(paramnode.children) == 1
-    assert paramnode.children[0].node_type == 'type'
     ice9_type = typenode_to_type(paramnode.children[0])
     paramnode.children.pop(0)
     
@@ -210,8 +210,9 @@ def array_reference(arrnode):
     assert vartype is not None
     vartype = expand_type(vartype)
     for c in arrnode.children:
-        check(equivalent_types(c.ice9_type, 'int'), c, "array references must be an int")
-        check(vartype[0] == "array", arrnode, "dereferenced an array too many times")
+        check(equivalent_types(c.ice9_type, 'int'), c, 
+              "expressions for array dereference must evaluate to ints")
+        check(vartype[0] == "array", c, "too many array dereferences in l-value")
         vartype = vartype[1]
     
     check_and_set_type(arrnode, vartype)
@@ -312,11 +313,11 @@ def for_loop_inherited(fornode):
 def for_loop_synthesized(fornode):
     check_and_set_type(fornode, 'nil')
     check(equivalent_types(fornode.children[1].ice9_type, 'int'),
-          fornode,
-          fornode.children[1].value + ' is not an int.')
+          fornode.children[1],
+          'expressions in fa must evaluate to ints')
     check(equivalent_types(fornode.children[2].ice9_type, 'int'),
-          fornode,
-          fornode.children[2].value + ' is not an int.')
+          fornode.children[2],
+          'expressions in fa must evaluate to ints')
 
 def do_loop(donode):
     check(equivalent_types(donode.children[0].ice9_type, 'bool'),
