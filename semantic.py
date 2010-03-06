@@ -179,12 +179,12 @@ def operator(opnode):
         check_and_set_type(opnode, opnode.children[0].ice9_type)
     
     elif len(opnode.children) == 1 and op == '?':
-        assert opnode.children[0].ice9_type == 'int', '? takes a bool.'
+        check(opnode.children[0].ice9_type == 'bool', opnode, '? takes a bool.')
         check_and_set_type(opnode, 'int')
     
     elif op in ('<', '<=', '>', '>='):
         for c in opnode.children:
-            assert c.ice9_type == 'int', c.value + " is not an int."
+            check(c.ice9_type == 'int', opnode, c.value + " is not an int.")
         check_and_set_type(opnode, 'bool')
    
     elif op in ('/', '%'):
@@ -222,7 +222,7 @@ def assignment(setnode):
     
     check(equivalent_types(cs[0].ice9_type, cs[1].ice9_type),
           setnode,
-          "incompatible assignment %s and %s." % (cs[0].ice9_type, cs[1].ice9_type))
+          "incompatible types to binary operator :=" % (cs[0].ice9_type, cs[1].ice9_type))
     
     check(first_definition(ice9_symbols, cs[0].value) != 'const',
           setnode, "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)

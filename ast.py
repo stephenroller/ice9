@@ -347,6 +347,7 @@ def parse2ast(parse_tree):
                         op = node.children[0].value
                         p.node_type = 'operator'
                         p.value = op
+                        p.line = node.children[0].line
                         p.children = node.children[1:]
                         for n in p.children:
                             n.parent = p
@@ -368,6 +369,7 @@ def parse2ast(parse_tree):
                         op = node.children[0].value
                         p.node_type = 'operator'
                         p.value = op
+                        p.line = node.children[0].line
                         p.children = [left, right]
                         left.parent = p
                         right.parent = p
