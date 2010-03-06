@@ -153,7 +153,7 @@ def ident(identnode):
     # represents a symbol lookup
     defn = None
     defn = first_definition(ice9_symbols, identnode.value)
-    check(defn is not None, identnode, identnode.value + " is not defined.")
+    check(defn is not None, identnode, "undeclared variable: %s" % identnode.value)
     check_and_set_type(identnode, defn)
 
 def operator(opnode):
@@ -180,7 +180,8 @@ def operator(opnode):
         check_and_set_type(opnode, opnode.children[0].ice9_type)
     
     elif len(opnode.children) == 1 and op == '?':
-        check(opnode.children[0].ice9_type == 'bool', opnode, '? takes a bool.')
+        check(opnode.children[0].ice9_type == 'bool', opnode, 
+              'incompatible type to unary operator ?')
         check_and_set_type(opnode, 'int')
     
     elif op in ('<', '<=', '>', '>='):
