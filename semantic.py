@@ -120,7 +120,7 @@ def define_type(dtnode):
     assert len(dtnode.children) == 0
     
     definitions = find_all_definitions(ice9_types, typename)
-    check(len(definitions) == 0, dtnode, 'type ' + typename + ' is already defined.')
+    check(len(definitions) == 0, dtnode, 'type ' + typename + ' is already defined in the current scope')
     
     define(ice9_types, typename, ice9_type)
     dtnode.kill()
@@ -200,7 +200,7 @@ def operator(opnode):
               "type %s incompatable with operator %s" % (left.ice9_type, op))
         check(equivalent_types(left.ice9_type, right.ice9_type),
               opnode,
-              "arguments of %s must be the same." % op)
+              "incompatible types to binary operator %s" % op)
         check_and_set_type(opnode, opnode.children[0].ice9_type)
         
 def array_reference(arrnode):
@@ -225,7 +225,7 @@ def assignment(setnode):
           "incompatible assignment %s and %s." % (cs[0].ice9_type, cs[1].ice9_type))
     
     check(first_definition(ice9_symbols, cs[0].value) != 'const',
-          setnode, "cannot assign to fa variable %s" % cs[0].value)
+          setnode, "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)
     
     check(cs[1].ice9_type != 'nil', 
           setnode,
