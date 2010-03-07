@@ -176,13 +176,19 @@ def ice9_do(do_node):
 
 @transformation_rule
 def dec_list(dec_list_node):
+    import copy
     if dec_list_node.parent.value != 'dec_list':
-        for c in list(dec_list_node.children):
-            if c.node_type == 'rule-expansion' and c.value == 'id_list':
-                param = c.children[0]
-                param.node_type = 'param'
-                c.remove_and_promote()
-                param.adopt_right_sibling()
+        assert len(dec_list_node.children) >= 2
+        idlist = dec_list_node.children[0]
+        assert idlist.value == "id_list"
+        typenode = dec_list_node.children.pop(1)
+        assert typenode.node_type == 'type'
+        for i in idlist.children:
+            i.node_type = 'param'
+            typecopy = copy.deepcopy(typenode)
+            i.children.append(typecopy)
+            typecopy.parent = i
+        idlist.remove_and_promote()
     
     dec_list_node.remove_and_promote()
 
@@ -392,7 +398,8 @@ def parse2ast(parse_tree):
                         b.parent = node
                         node.node_type = 'operator'
                         node.value = op2.value
-                        
+                        node.line = op2.line
+                        continue
             
             if node.value in transform_rules:
                 transform_rules[node.value](node)
