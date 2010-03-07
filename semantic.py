@@ -105,6 +105,8 @@ def typenode_to_type(tnode):
             "Array sizes must be literal ints.")
         check(dimension_size.ice9_type == 'int', dimension_size, 
             "Array sizes must be literal ints.")
+        check(dimension_size.value > 0, dimension_size,
+            "array dimensions must be > 0")
         full_type = ["array", full_type, dimension_size.value]
     
     return full_type
@@ -328,6 +330,9 @@ def for_loop_synthesized(fornode):
           fornode.children[2],
           'expressions in fa must evaluate to ints')
 
+def do_loop_inherited(donode):
+    donode.loopcount += 1
+
 def do_loop(donode):
     check(equivalent_types(donode.children[0].ice9_type, 'bool'),
           donode.children[0],
@@ -348,6 +353,7 @@ inherited_callbacks = {
     'proc': inherited_proc,
     'forward': forward,
     'for_loop': for_loop_inherited,
+    'do_loop': do_loop_inherited,
 }
 
 sythenisized_callbacks = {
