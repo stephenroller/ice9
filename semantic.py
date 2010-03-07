@@ -259,6 +259,7 @@ def forward(forwardnode):
     
     check_and_set_type(forwardnode, return_type)
     forwardtype = ["forward", return_type]
+    
     for c in forwardnode.children:
         assert c.node_type == 'param', "What's a non-param doing in a forward?"
         param(c)
@@ -305,7 +306,7 @@ def notype(node):
 def proc_call(pcnode):
     from itertools import izip_longest
     proctype = first_definition(ice9_procs, pcnode.value)
-    check(proctype is not None, pcnode, "proc %s is not defined." % pcnode.value)
+    check(proctype is not None, pcnode, "unknown proc %s" % pcnode.value)
         
     check(len(pcnode.children) == len(proctype[2:]),
           pcnode,
@@ -334,6 +335,8 @@ def for_loop_synthesized(fornode):
     check(equivalent_types(fornode.children[2].ice9_type, 'int'),
           fornode.children[2],
           'expressions in fa must evaluate to ints')
+    
+    leave_scope()
 
 def do_loop_inherited(donode):
     donode.loopcount += 1

@@ -101,12 +101,12 @@ def lvalue_prime(lvp_node):
     if lvp_node.parent.value == 'lvalue_prime':
         # If this is a multidimensional array, just collapse it with the
         # parent
-        lvp_node.become_child()
-        pass
+        lvp_node.remove_and_promote()
     else:
         # now we're either a singledimensional array, or we've collapsed
         # all the dimensions into one list. Either way, we need to usurp the
         # token
+        
         lvp_node.adopt_left_sibling()
         lvp_node.node_type = 'array_reference'
         name = lvp_node.children.pop(0)
@@ -177,18 +177,17 @@ def ice9_do(do_node):
 @transformation_rule
 def dec_list(dec_list_node):
     import copy
-    if dec_list_node.parent.value != 'dec_list':
-        assert len(dec_list_node.children) >= 2
-        idlist = dec_list_node.children[0]
-        assert idlist.value == "id_list"
-        typenode = dec_list_node.children.pop(1)
-        assert typenode.node_type == 'type'
-        for i in idlist.children:
-            i.node_type = 'param'
-            typecopy = copy.deepcopy(typenode)
-            i.children.append(typecopy)
-            typecopy.parent = i
-        idlist.remove_and_promote()
+    assert len(dec_list_node.children) >= 2
+    idlist = dec_list_node.children[0]
+    assert idlist.value == "id_list"
+    typenode = dec_list_node.children.pop(1)
+    assert typenode.node_type == 'type'
+    for i in idlist.children:
+        i.node_type = 'param'
+        typecopy = copy.deepcopy(typenode)
+        i.children.append(typecopy)
+        typecopy.parent = i
+    idlist.remove_and_promote()
     
     dec_list_node.remove_and_promote()
 
@@ -201,7 +200,8 @@ def forward(fnode):
     assert namenode.node_type == 'ident'
     fnode.node_type = 'forward'
     fnode.value = namenode.value
-    if len(fnode.children) >= 2 and fnode.children[-1].node_type == 'type':
+    if (len(fnode.children) >= 2 and fnode.children[-1].node_type == 'type' and 
+        fnode.children[-2].node_type == 'type'):
         fnode.children.insert(0, fnode.children.pop(-1))
     
 
