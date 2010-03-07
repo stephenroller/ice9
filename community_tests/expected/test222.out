@@ -1,1 +1,1 @@
-line 5: syntax error near <=
+line 7: var a already defined in scope

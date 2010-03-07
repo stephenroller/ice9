@@ -1,195 +1,238 @@
-# tests for program and stms rules
-1	completely empty file									fail
-2	only 1 comment											fail
-3	a var with no statements								fail
-4	a type with no statements								fail
-5	a forward with no statements							fail
-6	a proc with no statements								fail
-7	a var with a statement									succeed
-8	a type with a statement									succeed
-9	a forward with a statement								succeed
-10	a proc with a statment									succeed
-11	a var, type, forward & proc w/o a statement				fail
-12	a var, type, forward & proc w/ a statement				succeed
-13	2 vars, 2 types, 2 forwards, 2 procs w/o a statement	fail
-14	2 vars, 2 types, 2 forwards, 2 procs w/ 2 statements	succeed
-15	5 statements											succeed
-# tests for stm rule
-16	an if statement											succeed
-17	a do statement											succeed
-18  a fa statement											succeed
-19	a break semi											succeed
-20  just a break											fail
-21	an exit semi											succeed
-22	just an exit											fail
-23	a return semi											succeed
-24	just a return											fail
-25	write exp semi											succeed
-26	just a write											fail
-27	just a write and semi									fail
-28	writes exp semi											succeed
-29	just a writes											fail
-30	just a writes and semi									fail
-31	exp semi												succeed
-32	just an exp												fail
-# just a semi for an exp is tested in 3-15
-# tests for if rule
-33 if exp -> stms fi										succeed
-34 if exp -> stms [] exp -> stms fi							succeed
-35 if exp -> stms [] exp -> stms [] exp -> stms fi			succeed
-36 if exp -> stms [] else -> stms fi						succeed
-37 if exp -> stms [] exp -> stms [] else -> stms fi			succeed
-38 if														fail
-39 if -> stm fi	(missing exp)								fail
-40 if exp stm fi (missing ->)								fail
-41 if exp -> fi	(missing stms)								fail
-42 if exp -> stm (missing fi)								fail
-43 if exp -> stm exp -> stm fi (missing [])					fail
-44 if exp -> stm [] -> stm fi (missing exp)					fail
-45 if exp -> stm [] exp stm fi (missing ->)					fail
-46 if exp -> stm [] exp -> fi (missing stms)				fail
-47 if exp -> stm [] exp -> stm (missing fi)					fail
-48 if exp -> stm [] exp -> stm exp -> stm fi (missing [])	fail
-49 if exp -> stm [] exp -> stm [] -> stm fi (missing expr)	fail
-50 if exp -> stm [] exp -> stm [] exp stm fi (missing ->)	fail
-51 if exp -> stm [] exp -> stm [] exp -> fi	(missing stms)	fail
-52 if exp -> stm [] exp -> stm [] exp -> stm (missing fi)	fail
-53 if exp -> stm [] else stm fi	(missing ->)				fail
-54 if exp -> stm [] else -> fi (missing stms)				fail
-55 if exp -> stm [] else -> stm	(missing fi)				fail
-56 if exp -> stms [] else -> stms [] exp -> stms fi			fail
-		(another box option after an else)
-57 if exp -> stms [] else -> stms [] else -> stms fi		fail
-		(two else clauses)
-# tests for do rule
-58 do exp -> stms od										succeed
-59 do -> stms od (missing exp)								fail
-60 do exp stms od (missing ->)								fail
-61 do exp -> od (missing stms)								fail
-62 do exp -> stms (missing od)								fail
-# tests for fa rule
-63 fa id := exp to exp -> stms af							succeed
-64 fa														fail
-65 fa := exp to exp -> stms af (missing id)					fail
-66 fa id exp to exp -> stms af (missing :=)					fail
-67 fa id := to exp -> stms af (missing exp)					fail
-68 fa id := exp exp -> stms af (missing to)					fail
-69 fa id := exp to -> stms af (missing exp)					fail
-70 fa id := exp to exp stms af (missing ->)					fail
-71 fa id := exp to exp -> af (missing stms)					fail
-72 fa id := exp to exp -> stms (missing af)					fail
-# tests for proc rule
-73 proc foo () ; end stm									succeed
-74 proc foo (i : int) ; end stm								succeed
-75 proc foo () type var ; end stm							succeed
-76 proc foo () : int type type ; end stm					succeed
-77 proc foo (b : bool) : bool var var ; end stm				succeed
-78 proc ;													fail
-79 proc () ; end ; (missing id)								fail
-80 proc foo ) ; end ; (missing lparen)						fail
-81 proc foo ( ; end ; (missing rparen)						fail
-82 proc foo ; end ; (missing both parens)					fail
-83 proc foo (i : int) end ;									succeed
-84 proc foo (i : int) ; (missing end)						fail
-85 proc foo () : ; end ; missing typeid						fail
-86 proc foo () typeid ; end ; (missing :)					succeed (for now)
-87 proc foo (i : int, b : bool) : bool var write 0; end	;	succeed
-# idlist & declist rule tests
-88 proc foo (i,j : int, b,d : bool) ; end ;					succeed
-89 proc foo ( : int) ; end ; (missing id)					fail
-90 proc foo (i int) ; end ;	(missing colon)					fail
-91 proc foo (i : ) ; end ;	(missing type)					fail
-92 proc foo (i : int, b) ; end ; (missing : and type)		fail
-93 proc foo (i : int, b bool) ; end ; (missing :)			fail
-94 proc foo (i : int, b : ) ; end ;	(missing second type)	fail
-95 proc foo (i, : int) ; end ;	( missing id)				fail
-96 proc foo (i,j : int, b, : bool) ; end ; (missing second id)	fail
-# tests for var rule
-97 var i : int[2][2], b : bool ;							succeed
-98 var i,j : int, b,d : bool, m,n : int ;					succeed
-99 var i,j,k,l,m : int ;									succeed
-100 var i : int[3][4][5][6], b,d : bool[1][2] ;				succeed
-101 var ;													fail
-102 var ,k : int ; (missing id)								fail
-103 var i, : int ; (missing id)								fail
-104 var i int ;	(missing colon)								fail
-105 var i : int [ ;	(missing bracket)						fail
-106 var i : int [] ; (missing int)							fail
-107 var i : int [ 5 ; (missing bracket)						fail
-108 var i : int 6 ] ; (missing bracket)						fail
-109 var i : int [ 6 ], ; (missing varlist)					fail
-110 var i : int [6], d ; (missing colon & typeid)			fail
-111 var i : int [6], d : ; (missing typeid)					fail
-112 var i : int [6], d, : int; (missing id)					fail
-113 var i : int , [1] ; (missing id, colon & typeid)		fail
-# tests for forward rule
-114 forward foo () ;										succeed
-115 forward foo (i : int) ;									succeed
-116 forward foo (i,j : int, b,d : bool) ;					succeed
-117 forward foo () : int ;									succeed
-118 forward foo (i : int) : bool ;							succeed
-119 forward foo (i,j : int, b,d : bool) : bool ;			succeed
-120 forward ;	(incomplete)								fail
-121 forward foo ; (incomplete)								fail
-122 forward foo ( ;	(incomplete)							fail
-123 forward foo (i ); (missing : and typeid)				fail
-124 forward foo (i : ) ; (missing typeid)					fail
-125 forward foo (i : int ;	(missing paren)					fail
-126 forward foo (i, : int) ; (missing id)					fail
-127 forward for () : ;	(missing typeid)					fail
-# tests for type rule
-128 type foo = int[2][3] ;									succeed
-129 type foo = int ;										succeed
-130 type foo = bool[1][1][1][1][1];							succeed
-131 type ;					(incomplete)					fail
-132 type foo	;			(incomplete)					fail
-133 type foo =  ;			(incomplete)					fail
-134 type = int ;		(missing id)						fail
-135 type foo int ;		(missing =)							fail
-136 type foo = int [ ;  (missing int & ])					fail
-137 type foo = int [ ] ; (missing int)						fail
-# lvalue rule tests
-138 foo ;													succeed
-139 foo := 0 ;												succeed
-140 foo[0] := 0;											succeed
-141 foo[1][1][1] := 0;										succeed
-142 foo[ := 0;				(missing int & rbracket)		fail
-143 foo[] := 0;				(missing int)					fail
-144 foo 3] := 0;			(missing bracket)				fail
-# exp rule tests
-145 foo;													succeed
-146 foo := 0;												succeed
-147 567;													succeed
-148 true;													succeed
-149 false;													succeed
-150 "Hello";												succeed
-151 'Hi There';												succeed
-152 read;													succeed
-153 var foo : int foo := read;								succeed
-154 -90;													succeed
-155 i := ?true;												succeed
-156 i := ? -true;											succeed
-157 write 1+5;												succeed
-158 foo();													succeed
-159 foo(1+5, "Hello", false);								succeed
-160 1+5;													succeed
-161 1-5;													succeed
-162 1*5;													succeed
-163 1/5;													succeed
-164 1%5;													succeed
-165 1 = 2;													succeed
-166 true = false;											succeed
-167 true + true;											succeed
-168 false * true;											succeed
-169 1 != 2;													succeed
-170 true != false;											succeed
-171 1 < 5;													succeed
-172 1 > 5;													succeed
-173 1 <= 5;													succeed
-174 1 >= 5;													succeed
-175 foo := (1 + 2) / 3;										succeed
+# first simple expression tests
+# +
+1 plus, and logical or										succeed
+2 plus/logical or failure on mixed types (bool + int)		fail
+3 plus/logical or failure on mixed types (int + bool)		fail
+4 plus/logical or failure on mixed types (string + int)		fail
+# *
+5 mult and logical and										succeed
+6 mult, and logical and failure on mixed types (bool + int) fail
+7 mult, and logical and failure on mixed types (int + bool) fail
+8 mult, and logical and failure on mixed types (bool + str) fail
+# binary -
+9 binary - with ints										succeed
+10 binary - with bools										fail
+11 binary - with mixed types (ints & bools)					fail
+12 binary - with mixed types (string & int)					fail
+# /
+13 / with ints												succeed
+14 / with bools												fail
+15 / with mixed types (int & bool)							fail
+16 / with mixed types (int & string)						fail
+# =
+17 = with ints and bools									succeed
+18 = with mixed types (int & bool)							fail
+19 = with mixed types (bool & int)							fail
+20 = with mixed types (bool & string)						fail
+21 = nested error  "int = (int = int)"						fail
+# !=
+22 != with ints and bools									succeed
+23 != with mixed types (int & bool)							fail
+24 != with mixed types (bool & int)							fail
+25 != with mixed types (bool & string)						fail
+26 != nested error  "int != (int != int)"					fail
+# >
+27 > with int												succeed
+28 > with bool												fail
+29 > with mixed (int & bool)								fail
+# <
+30 < with int												succeed
+31 < with bools												fail
+32 < with mixed (int & string)								fail
+# >=
+33 >= with int												succeed
+34 >= with bools											fail
+35 >= with mixed (int & bool)								fail
+# <=
+36 <= with int												succeed
+37 <= with bools											fail
+38 <= with mixed (int & bool)								fail
+# %
+39 % with int												succeed
+40 % with bools												fail
+41 % with mixed (int & string)								fail
+# ?
+42 ? with bool												succeed
+43 ? with int												fail
+44 ? with string											fail
+# unary -
+45 unary - with int, bool									succeed
+46 unary with string										fail
+# combo tests
+47 mixed expression tests									succeed
+# write and writes
+48 write 5+6/3;	write "Hi there"; write "";					succeed
+49 write true;												fail
+50 writes 5+7; writes " "; writes "Hi There";				succeed
+51 writes (2 >= 4);											fail
+52 output results from prior successful tests				succeed
+# read
+53 3 != read;												succeed
+54 true = read;												fail
+55 read test from grammar									succeed
+# 1-level symbol table tests
+56 unknown variable test									fail 
+# :=
+57 simple symbol table tests & := type checking (int, bool & str)succeed
+58 int := bool												fail
+59 bool := int												fail
+60 int := string											fail
+# misc
+61 stand alone lvalue test									succeed
+62 solo ';' test											succeed
+# if tests
+63 if bool -> ; fi											succeed
+64 if int -> ; fi											fail
+65 if string -> ; fi										fail
+66 if bool + - bool -> ; fi									succeed
+67 if (int < int) -> ; fi									succeed
+68 if false -> ; [] true -> ; fi							succeed
+69 if true -> ; [] int -> ; fi								fail
+70 if false -> ; [] false -> ; [] else -> ; fi				succeed
+71 if test from spec										fail
+# do tests
+72 do true -> ; od											succeed
+73 do 1 -> ; od												fail
+74 do "Hi" -> ; od											fail
+75 var a : int \n do a -> ; od								fail
+76 var a : int \n a := 0; do a < 5 -> a := a + 1; od		succeed
+# break tests
+77 break alone												fail
+78 break in a do loop										succeed
+79 break w/ two do loops									succeed
+# fa tests
+80 fa i := 0 to 1 -> write i; af							succeed
+81 test hiding of previously defined var					succeed
+82 fa i := true to 1 -> ; af								fail
+83 fa i := 0 to true -> ; af								fail
+84 fa i := 0 to ?true -> ; af								succeed
+85 fa i := 0 to 10 -> break; af								succeed
+86 break with two fa loops									succeed
+87 fa i := 0 to 10 -> i := 2; af							fail
+88 fa with big if											succeed
+89 two loops with same var									succeed
+90 fa i := 0 to -10 -> ; af									succeed
+91 fa i := 'hi' to 'there' -> ; af							fail
+92 fa i := 0 to 0 -> write i; af							succeed
+93 break w/in inner of two loops							succeed
+94 break in [] clause										succeed
+95 break in else clause										succeed
+# simple typeid tests
+96 use a new type name										succeed
+97 use an unknown type										fail
+98 redefine int												fail
+# type tests
+99 type foo = int[3]; var foo : foo foo[0] := 0; ...		succeed
+100 type foo : int type foo : bool ;						fail
+101 type foo : int type bar foo[3] var bar : bar ...		succeed
+102	creating a type with an unknown type					fail
+# lvalue/type tests
+103 type foo = int[2] var a : foo[2] a := 0;				fail
+104 type foo = int[2] var a : foo[2] a[0] := 0;				fail
+105 type foo = int[2] var a : foo[2] a[0][0] := 0;			succeed
+106 type foo = int[2] var a : foo[2] a[0][0][0] := 0;		fail
+107 type foo = int[2] var a : foo a := 0;					fail
+108 type foo = int[2] var a : foo a[0] := 0;				succeed
+109 type foo = int[2] var a : foo a[0][0] := 0				fail
+110 type foo = int[2] var a : foo a[0][0][0] := 0			fail
+111 var a : int[2] a := 0;									fail
+112 var a : int[2] a[0] := 0;								succeed
+113 var a : int[2] a[0][0] := 0;							fail
+114 var a : int[2] a[0][0][0] := 0;							fail
+115 var a : int[2] a[0] := a;								fail
+116 var a : int[2] a[0] := 1; a[1] := -a[0];				succeed
+117 var a : int[2] a[0] := a[0][0];							fail
+118 var a : int[2] a['j'] := 0;								fail
+119 var a : int[2] a[true] := 0;							fail
+120 var a : int[2] a[?true] := 0;							succeed
+# missing basic tests
+121 plus/logical or failure on disallowed type (string)		fail
+122 plus/logical or failure on disallowed type (arrays)		fail
+123 mult/logical and failure on disallowed type (string)	fail
+124 mult/logical and failure on disallowed type (arrays)	fail
+125 = failure on disallowed type (string)					fail
+126 = failure on disallowed type (arrays)					fail
+127 != failure on disallowed type (string)					fail
+128 != failure on disallowed type (arrays)					fail
+129 := failure on disallowed type (arrays)					fail
+130 lingering access to fa loop variable					fail
+131 apparently I can't count								succeed
+132 type foo = int[2] type bar = foo[2] var b : bar b := 0; fail
+133 type foo = int[2] type bar = foo[2] var b : bar b[0] := 0; fail
+134 type foo = int[2] type bar = foo[2] var b : bar b[0][0] := 0; succeed
+135 type foo = int[2] type bar = foo[2] var b : bar b[0][0][0] := 0; fail
+136 type foo = int[0]										fail
+137 var b : int[0]											fail
+138 var a,b : int[1], c,d : bool[0]							fail
+139 var a,b : int, c,d : bool a := 0; b := 1; d := true;	succeed
+140 type foo = int[2] type bar = int[2] var a : foo var b : bar a[0] := b[0]; succeed
+# exit & return
+141 exit from loop											succeed
+142 return from	w/in a loop									succeed
+# simple forward tests
+143 forward int(s: str) ;									fail
+144 forward foo() ;											success
+145 forward foo(a, b : int) ;								success
+146 forward foo(a : int, b : bool) ;						success
+147 forward foo() forward foo() ;							fail
+148 forward foo() : int ;									success
+# int proc tests
+149 var i : int i := int("3");								success
+150 var b : bool b := int("3");								fail
+151 var s : str s := int("3");								fail
+152 var i : int i := int(true);								fail
+153 var i : int i := int(3);								fail
+154 var i : int var a : int[2] i := int(a);					fail
+155 int("3");												success
+156 var i : int i := int();									fail
+# proc w/ forward tests
+157 unknown proc call										fail
+158 int("a", "b");											fail
+159 proc different from forward (# params)					fail
+160 proc different from forward (types)						fail
+161 proc different from forward (return type)				fail
+162 2 procs w/ same name									fail
+163 forward & 2 procs w/ same name							fail
+# proc scope tests
+164 ref to parameter										succeed
+165 ref to two parameters									succeed
+166 ref to four parameters									succeed
+167 proc w/ array params									succeed
+168 double defined param									fail
+169 trailing reference to proc parameter					fail
 
-176 ill-formed id test										fail
+219 first example from spec clarification					succeed
+220 second example from spec clarification					succeed
+221 third example from spec clarification					fail
+222 subtle test from forum (proc a(a : int) : int)			fail
+223 large expression tests									succeed
+224 int test from spec										succeed
+225 mutual recursion										succeed
+226 proc call w/ too few params								fail
+227 proc call w/ too many params							fail
+228 type with unknown type									fail
+229 proc list test											succeed
+230 var list test											succeed
+231 x [y [z[a]] [0]] [0] [0] := 0;							succeed
+232 proc overriding global scope w/ param					succeed
+233 proc overriding global scope w/ var						succeed
+234 proc overriding global type								succeed
+235 forward & proc have diff names							succeed
+236 test recursive function	call							succeed
+237 forward w/o proc										fail
+238 check scope of fa loop variable							fail
+239 double check array := array fails						fail
+240 double check := of aliased basic types					succeed
+241 test a lingering type ref								fail
+242 test array size aspect of type							fail
+243 type checking example from forum						succeed
+244 redefining non-returning proc's name					succeed
+245 array size order test									succeed
+246 proc var override failure								fail
+247 fa & proc overriding prior loop variable defns			succeed
+248 test override of user defined type in a proc			succeed
+249 override int, bool & str in a proc						succeed
+250-256 provided examples									succeed
 
-test ID beginning w/ a number and _ and with bad chars ($)
-test both kinds of string
+
+
