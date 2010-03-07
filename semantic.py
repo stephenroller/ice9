@@ -241,13 +241,13 @@ def assignment(setnode):
     check(first_definition(ice9_symbols, cs[0].value) != 'const',
           setnode, "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)
     
-    check(cs[1].ice9_type != 'nil', 
-          setnode,
-          'Cannot assign variable %s' % cs[1].value)
-    
+    check(expand_type(cs[1].ice9_type) in ("int", "bool", "str"),
+          cs[1],
+          "binary operator := only defined for int, bool and str")
+
     check(expand_type(cs[0].ice9_type) in ("int", "bool", "str"),
-          setnode,
-          "Cannot assign to non-base type %s" % cs[0].ice9_type)
+          cs[0],
+          "binary operator := only defined for int, bool and str")
     
     check_and_set_type(setnode, 'nil')
 
@@ -305,6 +305,11 @@ def notype(node):
 def proc_call(pcnode):
     from itertools import izip_longest
     proctype = first_definition(ice9_procs, pcnode.value)
+    check(proctype is not None, pcnode, "proc %s is not defined." % pcnode.value)
+        
+    check(len(pcnode.children) == len(proctype[2:]),
+          pcnode,
+          "number of parameters mismatch in call to %s" % pcnode.value)
     for child, param in izip_longest(pcnode.children, proctype[2:]):
         check(equivalent_types(child.ice9_type, param),
               pcnode,
@@ -412,6 +417,7 @@ def check_semantics(ast):
 if __name__ == '__main__':
     with file('test.txt') as f:
         ast = parse2ast(parse(f.read()))
+        print ast
         print ""
         print ""
         print check_semantics(ast)

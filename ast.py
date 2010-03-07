@@ -326,7 +326,8 @@ def parse2ast(parse_tree):
                 assert node.parent.children.pop(0) == node
                 
         elif node.node_type == 'rule-expansion':
-            if len(node.children) == 0 and node.value != 'proc_call':
+            if (len(node.children) == 0 and node.value != 'proc_call' and 
+                node.value != 'program'):
                 # Empty node, let's just kill it and go onto the next
                 node.kill()
                 continue
@@ -373,6 +374,25 @@ def parse2ast(parse_tree):
                         left.parent = p
                         right.parent = p
                         continue
+                elif (node.children[0].node_type == 'token' and
+                      node.children[0].value in BINARY_OPS and
+                      node.parent.node_type == 'rule-expansion' and
+                      node.parent.value == node.value and
+                      len(node.parent.children) >= 3):
+                        # a op1 b op2 c, where precence(op1) == precendence(op2)
+                        # 
+                        #    node.parent             node.parent
+                        #   /     |     \                /  \
+                        # op1     b     node    =>     op1   op2
+                        #               /  \                /  \
+                        #             op2   c              b     c
+                        b = node.parent.children.pop(1)
+                        op2 = node.children.pop(0)
+                        node.children.insert(0, b)
+                        b.parent = node
+                        node.node_type = 'operator'
+                        node.value = op2.value
+                        
             
             if node.value in transform_rules:
                 transform_rules[node.value](node)
