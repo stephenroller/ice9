@@ -1,9 +1,11 @@
-Project 1 Readme
+Project 2 Readme
 ----------------
 Stephen Roller
 
 Attributions:
-* Andrew Austin and I created our grammar together. My code is 100% my own.
+* Andrew Austin, Jerrod and I created our grammar together; I eventually 
+  modified it slightly
+* My code is 100% my own.
 * In addition to creating some unit tests of my own, I took advantage of
   Robert Phillip's test suite on the forum.
 
