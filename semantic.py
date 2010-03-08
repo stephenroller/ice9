@@ -292,10 +292,14 @@ def inherited_proc(procnode):
     check_and_set_type(procnode, proctype)
     forward_defn_type = first_definition(ice9_procs, procname)
     if forward_defn_type is not None:
+        check(type(forward_defn_type) == list and forward_defn_type[0] == 'forward',
+              procnode,
+              'proc %s is already defined' % procname)
         check(equivalent_types(proctype, forward_defn_type),
               procnode,
               "mismatch between forward and proc defns of %s" % procnode.value)
         forward_defn_type[0] = "proc"
+        define(ice9_procs, procname, proctype)
     else:
         define(ice9_procs, procname, proctype)
     
@@ -420,10 +424,10 @@ def check_semantics(ast):
     retval = semantic_helper(ast)
     
     for k,v in ice9_procs[0].iteritems():
-        check(type(v) != list or v[0] != 'foward',
+        check(type(v) == list and v[0] != 'forward',
               ast,
-              'forward %s without proc' % v[1])
-            
+              'proc %s has no body' % k)
+    
     
     return retval
     

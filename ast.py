@@ -283,6 +283,7 @@ def proc(proc_node):
     assert ident.node_type == 'ident'
     proc_node.node_type = 'proc'
     proc_node.value = ident.value
+    proc_node.line = ident.line
     
     # first child is left as type and second as statements
     if len(proc_node.children) >= 2 and proc_node.children[-2].node_type == 'type':

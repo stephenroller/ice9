@@ -1,1 +1,1 @@
-line 7: proc foo has already defined in the current scope
+line 7: proc foo is already defined
