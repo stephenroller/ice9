@@ -411,7 +411,7 @@ def check_semantics(ast):
         'int': ['proc', 'int', ["param", "num", 'str']]
     })]
 
-    ice9_types = [dict({
+    ice9_types = [dict(), dict({
         'nil': 'base',
         'int': 'base',
         'str': 'base',
@@ -433,19 +433,3 @@ def check_semantics(ast):
     
     return retval
     
-
-if __name__ == '__main__':
-    with file('test.txt') as f:
-        ast = parse2ast(parse(f.read()))
-        print ast
-        print ""
-        print ""
-        print check_semantics(ast)
-        print '%' * 80
-        print ice9_procs
-        print ""
-        print ice9_types
-        print ""
-        print ice9_symbols
-        print '-' * 80
-        print ast
