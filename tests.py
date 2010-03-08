@@ -1,5 +1,6 @@
 import unittest
 import ice9
+import os
 from StringIO import StringIO
 from ice9 import Ice9Error
 from lexer import lex_source, Ice9LexicalError
@@ -143,7 +144,8 @@ def make_community_test(test_id):
 
 for i in xrange(1, 257):
     # Load all the community tests
-    globals()['community_test_%d' % i] = make_community_test(i)
+    if os.path.isfile("community_tests/tests/test%d.9" % i):
+        globals()['community_test_%d' % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()
