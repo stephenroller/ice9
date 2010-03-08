@@ -284,6 +284,8 @@ def inherited_proc(procnode):
         if c.node_type == 'param':
             param(c)
             proctype.append(["param", c.value, c.ice9_type])
+            check(c.value not in ice9_symbols[0], procnode,
+                  "var %s already defined in scope" % c.value)
             define(ice9_symbols, c.value, c.ice9_type)
     
     if procnode.children[0].node_type == 'type':
