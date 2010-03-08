@@ -223,7 +223,7 @@ def type_id(t_node):
     for right_sibling in list(siblings[myindex+1:]):
         if (right_sibling.node_type == 'literal' and 
             right_sibling.ice9_type == 'int'):
-                t_node.children.append(right_sibling)
+                t_node.children.insert(0, right_sibling)
                 right_sibling.parent = t_node
                 siblings.remove(right_sibling)
         else:
