@@ -264,6 +264,10 @@ def forward(forwardnode):
     else:
         return_type = 'nil'
     
+    check(forwardnode.value not in ice9_procs[0], 
+          forwardnode,
+          "proc %s is already defined in the current scope" % forwardnode.value)
+    
     check_and_set_type(forwardnode, return_type)
     forwardtype = ["forward", return_type]
     
@@ -296,8 +300,8 @@ def inherited_proc(procnode):
     proctype.insert(1, rettype)
     # check if we had a forward define it already.
     check_and_set_type(procnode, proctype)
-    forward_defn_type = first_definition(ice9_procs, procname)
-    if forward_defn_type is not None:
+    if procname in ice9_procs[0]:
+        forward_defn_type = ice9_procs[0][procname]
         check(type(forward_defn_type) == list and forward_defn_type[0] == 'forward',
               procnode,
               'proc %s is already defined' % procname)
@@ -318,7 +322,7 @@ def notype(node):
 
 def proc_call(pcnode):
     from itertools import izip_longest
-    proctype = ice9_procs[0].get(pcnode.value, None)
+    proctype = first_definition(ice9_procs, pcnode.value)
     check(proctype is not None, pcnode, "unknown proc %s" % pcnode.value)
         
     check(len(pcnode.children) == len(proctype[2:]),
@@ -412,7 +416,7 @@ def semantic_helper(ast):
 def check_semantics(ast):
     global ice9_procs, ice9_types, ice9_symbols
     
-    ice9_procs = [dict({
+    ice9_procs = [dict(), dict({
         'int': ['proc', 'int', ["param", "num", 'str']]
     })]
 
@@ -424,7 +428,7 @@ def check_semantics(ast):
         'const': 'int',
     })]
     
-    ice9_symbols = [ dict() ]
+    ice9_symbols = [dict(), dict() ]
     
     ast.loopcount = 0
     
