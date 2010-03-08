@@ -203,13 +203,13 @@ def operator(opnode):
                   "incompatible types to binary operator %s" % op)
         check_and_set_type(opnode, 'bool')
    
-    elif op in ('/', '%'):
+    elif op in ('/', '%', '-'):
         for c in opnode.children:
             check(c.ice9_type == 'int', opnode,
                   "incompatible types to binary operator %s" % op)
         check_and_set_type(opnode, 'int')
     
-    elif op in ('=', '!=', '-', '+', '*'):
+    elif op in ('=', '!=', '+', '*'):
         left, right = opnode.children[0:2]
         check(any(equivalent_types(left.ice9_type, t) for t in ('int', 'bool')),
               opnode,
