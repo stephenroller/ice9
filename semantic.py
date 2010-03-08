@@ -140,6 +140,9 @@ def define_var(varnode):
     
     varname = varnode.value
     assert len(varnode.children) == 0
+    check(varname not in ice9_symbols[0],
+          varnode,
+          'var(s) already defined in scope')
     
     define(ice9_symbols, varname, ice9_type)
     varnode.kill()
