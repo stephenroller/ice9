@@ -418,7 +418,7 @@ def semantic_helper(ast):
 def check_semantics(ast):
     global ice9_procs, ice9_types, ice9_symbols
     
-    ice9_procs = [dict({
+    ice9_procs = [dict(), dict({
         'int': ['proc', 'int', ["param", "num", 'str']]
     })]
 
