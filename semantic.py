@@ -115,7 +115,10 @@ def define_type(dtnode):
     # process the type early
     assert len(dtnode.children) == 1
     assert dtnode.children[0].node_type == 'type'
-    ice9_type = typenode_to_type(dtnode.children[0])
+    try:
+        ice9_type = expand_type(typenode_to_type(dtnode.children[0]))
+    except ValueError, e:
+        check(False, dtnode.children[0], e)
     dtnode.children.pop(0)
     
     typename = dtnode.value
