@@ -345,24 +345,23 @@ def parse2ast(parse_tree):
                 continue
             
             elif len(node.children) == 2:
-                
                 # Let's check for unary ops
                 if (node.children[0].node_type == 'token' and
                     node.children[0].value in UNARY_OPS and
                     node.parent.node_type == 'rule-expansion' and
-                    len(node.parent.children) == 1):
-                        #  node.parent         op
+                    (len(node.parent.children) == 1 or 
+                    (len(node.parent.children) == 2 and node.parent.value == node.value ))):
+                        #  node.parent         node.parent
                         #     |                |
-                        #    node       =>     right
-                        #    /  \
-                        #  op   right
+                        #    node       =>     op
+                        #    /  \              |
+                        #  op   right          right
                         p = node.parent
                         op = node.children[0].value
-                        p.node_type = 'operator'
-                        p.value = op
-                        p.line = node.children[0].line
+                        node.node_type = 'operator'
+                        node.value = op
+                        node.line = node.children[0].line
                         node.children.pop(0)
-                        node.become_child()
                         continue
                 
                 # let's check for those binary operators

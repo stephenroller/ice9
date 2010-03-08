@@ -74,8 +74,8 @@ MedPrime      -> '*' High MedPrime
                | '%' High MedPrime
                | ε
 
-High          -> '-' Expr
-               | '?' Expr
+High          -> '-' High
+               | '?' High
                | End
 
 # plain ids and arrays

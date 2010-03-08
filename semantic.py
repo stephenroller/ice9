@@ -281,8 +281,6 @@ def forward(forwardnode):
 
 def inherited_proc(procnode):
     add_scope()
-    import pdb
-    
     procname = procnode.value
     proctype = ["proc"]
     for c in procnode.children:
@@ -435,7 +433,6 @@ def check_semantics(ast):
     ice9_symbols = [dict(), dict() ]
     
     ast.loopcount = 0
-    
     retval = semantic_helper(ast)
     
     for k,v in ice9_procs[0].iteritems():

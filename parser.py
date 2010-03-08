@@ -340,7 +340,7 @@ def med_prime(stream):
 @grammar_rule
 def high(stream):
     if stream.is_next('-') or stream.is_next('?'):
-        return expr(stream, True)
+        return high(stream, True)
     else:
         return end(stream)
 
