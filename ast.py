@@ -116,6 +116,7 @@ def lvalue_prime(lvp_node):
 @transformation_rule
 def value_or_assignment(va_node):
     if len(va_node.children) > 0:
+        va_node.parent.line = va_node.children[0].line
         assert va_node.children.pop(0).value == ':='
         
         va_node.parent.children.remove(va_node)
@@ -236,6 +237,7 @@ def ice9_type(type_node):
     name = type_node.children.pop(0)
     assert name.node_type == 'ident'
     type_node.value = name.value
+    type_node.line = name.line
     assert type_node.children.pop(0).value == '='
 
 @transformation_rule

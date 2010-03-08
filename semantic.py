@@ -239,14 +239,14 @@ def assignment(setnode):
           "incompatible types to binary operator :=")
     
     check(first_definition(ice9_symbols, cs[0].value) != 'const',
-          setnode, "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)
+          cs[0], "the fa variable (%s) cannot be written to in the loop body" % cs[0].value)
     
     check(expand_type(cs[1].ice9_type) in ("int", "bool", "str"),
-          cs[1],
+          setnode,
           "binary operator := only defined for int, bool and str")
 
     check(expand_type(cs[0].ice9_type) in ("int", "bool", "str"),
-          cs[0],
+          setnode,
           "binary operator := only defined for int, bool and str")
     
     check_and_set_type(setnode, 'nil')
