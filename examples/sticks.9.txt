@@ -2,7 +2,7 @@
 
 var N: int		# the current number of sticks
 var pick, k: int
-var picktext: string
+var picktext: str
 
 proc check(): int
    var ans: int
