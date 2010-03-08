@@ -55,14 +55,6 @@ class Tree():
         spc = self.parent.children
         self.parent.children = spc[:i] + self.children + spc[i+1:]
     
-    def adopt_right_sibling(self):
-        i = self.parent.children.index(self)
-        # remove the left sibling
-        left_sibling = self.parent.children.pop(i+1)
-        # and move it to the front
-        self.children.insert(0, left_sibling)
-        left_sibling.parent = self
-    
     def adopt_left_sibling(self):
         i = self.parent.children.index(self)
         # remove the left sibling
@@ -76,13 +68,7 @@ class Tree():
             for x in child.postfix_iter():
                 yield x
         yield self
-    
-    def prefix_iter(self):
-        yield self
-        for child in self.children:
-            for x in child.prefix_iter():
-                yield x
-    
+
     def __str__(self, tab=""):
         out = []
         print_attr = ('line', 'node_type', 'value', 'ice9_type')
