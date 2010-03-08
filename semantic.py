@@ -120,9 +120,7 @@ def define_type(dtnode):
     
     typename = dtnode.value
     assert len(dtnode.children) == 0
-    
-    definitions = find_all_definitions(ice9_types, typename)
-    check(len(definitions) == 0, dtnode, 
+    check(typename not in ice9_types[0], dtnode, 
           'type ' + typename + ' is already defined in the current scope')
     
     define(ice9_types, typename, ice9_type)
@@ -315,12 +313,13 @@ def notype(node):
 
 def proc_call(pcnode):
     from itertools import izip_longest
-    proctype = first_definition(ice9_procs, pcnode.value)
+    proctype = ice9_procs[0].get(pcnode.value, None)
     check(proctype is not None, pcnode, "unknown proc %s" % pcnode.value)
         
     check(len(pcnode.children) == len(proctype[2:]),
           pcnode,
           "number of parameters mismatch in call to %s" % pcnode.value)
+    
     for child, param in izip_longest(pcnode.children, proctype[2:]):
         check(equivalent_types(child.ice9_type, param),
               pcnode,
