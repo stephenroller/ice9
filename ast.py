@@ -256,7 +256,8 @@ def var(var_node):
             assert def_id.node_type == 'ident'
             var_node.add_child(node_type = 'define',
                                value = def_id.value,
-                               children = type_info[:]
+                               children = type_info[:],
+                               line = def_id.line
                                )
     
     var_node.remove_and_promote()

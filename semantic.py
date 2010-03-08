@@ -58,7 +58,7 @@ def expand_type(typeval):
             else:
                 return expand_type(subtype)
         else:
-            raise ValueError(typeval + ' is not defined')
+            raise ValueError('unknown type: %s' % typeval)
     elif type(typeval) == list:
         if typeval[0] == "array":
             return ["array", expand_type(typeval[1])] + typeval[2:]
@@ -132,7 +132,10 @@ def define_var(varnode):
     # Need to find the var's type
     assert len(varnode.children) == 1
     assert varnode.children[0].node_type == 'type'
-    ice9_type = typenode_to_type(varnode.children[0])
+    try:
+        ice9_type = expand_type(typenode_to_type(varnode.children[0]))
+    except ValueError, e:
+        check(False, varnode.children[0], e)
     varnode.children.pop(0)
     
     varname = varnode.value
@@ -172,9 +175,9 @@ def operator(opnode):
         check_and_set_type(opnode, 'nil')
         check(len(opnode.children) == 1, opnode, op + " takes one parameter.")
         check(any(equivalent_types(t, opnode.children[0].ice9_type)
-                for t in ('bool', 'int', 'str')),
+                for t in ('int', 'str')),
               opnode,
-              'cannot %s %s' % (op, opnode.children[0].ice9_type))
+              'incompatible argument type to %s' % op)
     
     elif op == 'read':
         check_and_set_type(opnode, 'int')
