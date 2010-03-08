@@ -200,8 +200,9 @@ def forward(fnode):
     assert namenode.node_type == 'ident'
     fnode.node_type = 'forward'
     fnode.value = namenode.value
+    
     if (len(fnode.children) >= 2 and fnode.children[-1].node_type == 'type' and 
-        fnode.children[-2].node_type == 'type'):
+        fnode.children[-2].node_type == 'param'):
         fnode.children.insert(0, fnode.children.pop(-1))
     
 

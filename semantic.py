@@ -156,7 +156,7 @@ def ident(identnode):
     defn = None
     defn = first_definition(ice9_symbols, identnode.value)
     check(defn is not None, identnode, "undeclared variable: %s" % identnode.value)
-    check_and_set_type(identnode, defn)
+    check_and_set_type(identnode, expand_type(defn))
 
 def operator(opnode):
     op = opnode.value
@@ -291,7 +291,7 @@ def inherited_proc(procnode):
     if forward_defn_type is not None:
         check(equivalent_types(proctype, forward_defn_type),
               procnode,
-              "proc " + procname + " does not match the signature of its forward.")
+              "mismatch between forward and proc defns of %s" % procnode.value)
         forward_defn_type[0] = "proc"
     else:
         define(ice9_procs, procname, proctype)
@@ -414,7 +414,15 @@ def check_semantics(ast):
     
     ast.loopcount = 0
     
-    return semantic_helper(ast)
+    retval = semantic_helper(ast)
+    
+    for k,v in ice9_procs[0].iteritems():
+        check(type(v) != list or v[0] != 'foward',
+              ast,
+              'forward %s without proc' % v[1])
+            
+    
+    return retval
     
 
 if __name__ == '__main__':
