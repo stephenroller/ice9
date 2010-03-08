@@ -336,7 +336,7 @@ def parse2ast(parse_tree):
                 
         elif node.node_type == 'rule-expansion':
             if (len(node.children) == 0 and node.value != 'proc_call' and 
-                node.value != 'program'):
+                node.value != 'program' and node.value != 'stms'):
                 # Empty node, let's just kill it and go onto the next
                 node.kill()
                 continue
