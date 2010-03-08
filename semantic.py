@@ -281,13 +281,17 @@ def forward(forwardnode):
 
 def inherited_proc(procnode):
     add_scope()
+    import pdb
     
     procname = procnode.value
     proctype = ["proc"]
     for c in procnode.children:
         if c.node_type == 'param':
             param(c)
-            proctype.append(["param", c.value, c.ice9_type])
+            try:
+                proctype.append(["param", c.value, expand_type(c.ice9_type)])
+            except ValueError, e:
+                check(False, c, e)
             check(c.value not in ice9_symbols[0], procnode,
                   "var %s already defined in scope" % c.value)
             define(ice9_symbols, c.value, c.ice9_type)
