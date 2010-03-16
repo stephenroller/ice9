@@ -10,20 +10,6 @@ FP   = 5 # points to the start of the frame
 SP   = 6 # points to the top of the stack
 PC   = 7 # points to the next instruction
 
-# the repeated callback paradigm
-callbacks = {}
-
-def generate_rule(rule):
-    callbacks[rule.func_name] = rule
-
-@generate_rule
-def literal(ast):
-    if ast.ice9_type == 'int' or ast.ice9_type == 'bool':
-        return [('LDC', AC1, int(ast.value), ZERO)]
-
-def noop(ast):
-    return []
-
 def code4str(code4):
     """Converts from code4 to something actually usuable by TM."""
     output = []
@@ -41,14 +27,33 @@ def code4str(code4):
         
     return "\n".join("%d: %s" % (i, x) for i, x in enumerate(output))
 
+# NODE_TYPE RULES ------------
+
+def literal(ast):
+    if ast.ice9_type == 'int' or ast.ice9_type == 'bool':
+        return [('LDC', AC1, int(ast.value), ZERO)]
+
+# the repeated callback paradigm
+callbacks = {
+    'literal': literal,
+}
+
 def generate_code(ast):
     """
     Generates a list of 4-tuples describing instructions for TM code.
     """
     from operator import add
     
+    def noop(ast):
+        # returns empty code
+        return []
+    
     for node in ast.postfix_iter():
-        cb = callbacks.get(node.node_type, noop)
+        if node.node_type == 'operator':
+            cb = callbacks.get(node.value, noop)
+        else:
+            cb = callbacks.get(node.node_type, noop)
+        
         # code 4 because callbacks return 
         setattr(node, 'code4', cb(node)) 
     
