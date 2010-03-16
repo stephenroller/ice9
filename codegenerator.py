@@ -5,53 +5,69 @@ ZERO = 0 # always zero
 AC1  = 1 # Accumulator 1
 AC2  = 2 # Accumulator 2
 AC3  = 3 # Accumulator 3
-AC4  = 4 # Accumulator 4
+ST   = 4 # Temporary storage
 FP   = 5 # points to the start of the frame
 SP   = 6 # points to the top of the stack
 PC   = 7 # points to the next instruction
 
-def code4str(code4):
-    """Converts from code4 to something actually usuable by TM."""
+def code5str(code5):
+    """Converts from code5 to something actually usuable by TM."""
+    from itertools import count
     output = []
-    for inst4 in code4:
-        inst, a, b, c = inst4
+    linecounter = count()
+    for inst5 in code5:
+        inst, r, s, t, com = inst5
         if inst in ('LDC', 'LDA', 'LD', 'ST', 'JLT', 'JLE', 'JEQ', 
                     'JNE', 'JGE', 'JGT'):
-            output.append("%3s %d, %d(%d)" % inst4)
+            ln = linecounter.next() # line number
+            output.append("%5d: %-9s %d,%d(%d)\t%s" % (ln, inst, r, s, t, com))
         elif inst in ('HALT', 'IN', 'OUT', 'INB', 'OUTB', 'OUTC', 
                       'ADD', 'SUB', 'MUL', 'DIV', 'OUTNL'):
-            output.append("%3s %d, %d, %d" % inst4)
+            ln = linecounter.next()
+            output.append("%5d: %-9s %d,%d,%d\t\t%s" % (ln, inst, r, s, t, com))
         elif inst == 'comment':
-            output.append("* %s" % a)
+            output.append("* %s" % com)
         else:
             raise ValueError("Can't print this instruction: %s" % inst)
         
-    return "\n".join("%d: %s" % (i, x) for i, x in enumerate(output))
+    return "\n".join(output)
 
 # NODE_TYPE RULES ------------
+def comment(comment):
+    return [('comment', 0, 0, 0, comment)]
 
 def literal(ast):
     if ast.ice9_type == 'int' or ast.ice9_type == 'bool':
-        return [('LDC', AC1, int(ast.value), ZERO)]
+        return [('LDC', AC1, int(ast.value), 0, 'load constant: %s' % ast.value)]
 
 def writes(ast):
     value = ast.children[0]
     if value.ice9_type == 'int':
-        return [('OUT', AC1, ZERO, ZERO)]
+        return [('OUT', AC1, 0, 0, 'writing int')]
+    elif value.ice9_type == 'bool':
+        return [('OUTB', AC1, 0, 0, 'writing bool')]
+        return comment('writing bool')
+    else:
+        raise ValueError("unimplmented")
 
 def write(ast):
-    return writes(ast) + [('OUTNL', ZERO, ZERO, ZERO)]
+    return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
+
+def program(ast):
+    return comment('END OF PROGRAM')
 
 # the repeated callback paradigm
 callbacks = {
     'literal': literal,
     'write': write,
     'writes': writes,
+    'program': program,
 }
 
 def generate_code(ast):
     """
-    Generates a list of 4-tuples describing instructions for TM code.
+    Generates a list of 5-tuples describing instructions for TM code of the form
+        (inst, r, s, t, comment)
     """
     from operator import add
     
@@ -59,7 +75,7 @@ def generate_code(ast):
         # returns empty code
         return []
     
-    code4 = []
+    code5 = []
     for node in ast.postfix_iter():
         if node.node_type == 'operator':
             cb = callbacks.get(node.value, noop)
@@ -67,10 +83,10 @@ def generate_code(ast):
             cb = callbacks.get(node.node_type, noop)
         
         # code 4 because callbacks return 
-        setattr(node, 'code4', cb(node)) 
-        code4 += node.code4
+        setattr(node, 'code5', cb(node)) 
+        code5 += node.code5
     
-    return code4str(code4)
+    return code5str(code5)
 
 if __name__ == '__main__':
     from ice9 import compile
