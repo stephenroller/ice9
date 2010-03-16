@@ -16,7 +16,8 @@ def compile(source):
     from parser import parse
     from ast import parse2ast
     from semantic import check_semantics
-    return check_semantics(parse2ast(parse(source)))
+    from codegenerator import generate_code
+    return generate_code(check_semantics(parse2ast(parse(source))))
 
 def main(*args):
     from parser import Ice9SyntaxError

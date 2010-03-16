@@ -440,7 +440,7 @@ def check_semantics(ast):
     ice9_symbols = [dict(), dict() ]
     
     ast.loopcount = 0
-    retval = semantic_helper(ast)
+    semantic_helper(ast)
     
     for k,v in ice9_procs[0].iteritems():
         check(type(v) == list and v[0] != 'forward',
@@ -448,5 +448,5 @@ def check_semantics(ast):
               'proc %s has no body' % k)
     
     
-    return retval
+    return ast
     

@@ -63,6 +63,12 @@ class Tree:
         self.children.insert(0, left_sibling)
         left_sibling.parent = self
     
+    def prefix_iter(self):
+        yield self
+        for c in self.children:
+            for x in c.prefix_iter():
+                yield x
+    
     def postfix_iter(self):
         for child in self.children.__reversed__():
             for x in child.postfix_iter():
