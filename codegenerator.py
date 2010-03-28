@@ -12,6 +12,16 @@ PC   = 7 # points to the next instruction
 
 # Code generation utilities -------------------------------------------------
 
+def push_register(reg):
+    """Creates code for pushing a register onto the stack."""
+    return [('LDA', SP, -1, SP, 'Push the stack pointer'),
+            ('ST', reg, 0, SP, 'Store reg %s on the stack' % reg)]
+
+def pop_register(reg):
+    """Creates code for popping a register off the stack."""
+    return [('LD', reg, 0, SP, 'Pop reg %d off the stack' % reg),
+            ('LDA', SP, 1, SP, 'Pop the stack pointer')]
+
 def comment(comment):
     """Makes a comment line."""
     return [('comment', 0, 0, 0, comment)]
@@ -70,13 +80,19 @@ def binary_operator(opinst, ast):
     MUL. ast is the AST including the operator node.
     """
     left, right = ast.children
+    
+    # Store the result of the left operand on the stack.
     code5  = generate_code(left)
-    # The left operand is stored in AC1. Move it to AC2
-    code5 += [('LDA', AC2, 0, AC1, 'Store left value in ACC2')]
-    # right operand is in ACC1
+    code5 += push_register(AC1)
+    
+    # store value of right operand is in AC1
     code5 += generate_code(right)
-    # And add the two and store in ACC1
-    code5 += [(opinst, AC1, AC1, AC2, '%s left and right.' % opinst)]
+    
+    # Get the left value off the stack and put it in AC2
+    code5 += pop_register(AC2)
+    
+    # And add the two and store in AC1
+    code5 += [(opinst, AC1, AC2, AC1, '%s left and right.' % opinst)]
     return code5
 
 def add(ast):
@@ -100,8 +116,7 @@ def sub(ast):
                     ('MUL', AC1, AC1, AC2, 'Invert sign.')
                 ]
     else:
-        assert len(ast.children) == 1
-        # binary subtract
+        assert len(ast.children) == 2, "Subtract should only have two nodes"
         return binary_operator('SUB', ast)
 
 # end binary operators ------------------------------------------------------
