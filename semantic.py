@@ -322,8 +322,15 @@ def synthesized_proc(procnode):
 def notype(node):
     check_and_set_type(node, 'nil')
 
+def izip_longest(*lists):
+   from itertools import izip
+   goalsize = max(len(L) for L in lists)
+   lists = [L + [None] * (len(L) - goalsize)
+               for L in lists]
+   for r in izip(*lists):
+       yield r
+
 def proc_call(pcnode):
-    from itertools import izip_longest
     proctype = first_definition(ice9_procs, pcnode.value)
     check(proctype is not None, pcnode, "unknown proc %s" % pcnode.value)
         

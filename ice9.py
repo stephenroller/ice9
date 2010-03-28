@@ -39,7 +39,7 @@ def main(*args):
             sys.exit(0)
         else:
             raise Ice9Error(0, 'invalid input')
-    except (Ice9Error, Ice9LexicalError, Ice9SyntaxError, Ice9SemanticError) as e:
+    except (Ice9Error, Ice9LexicalError, Ice9SyntaxError, Ice9SemanticError), e:
         # but if there's an error, print it out and exit.
         sys.stderr.write(str(e) + "\n")
         sys.exit(1)

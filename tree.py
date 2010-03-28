@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-class Tree():
+class Tree:
     """Represents a generic tree."""
     def __init__(self, parent=None, **kwargs):
         self.parent = parent
