@@ -1,4 +1,4 @@
-u sho/**************************************************************/
+/**************************************************************/
 /* File: tm.c                                                 */
 /* The TM ("Tiny Machine") computer                           */
 /* Compiler Construction: Principles and Practice             */
@@ -383,8 +383,10 @@ void clearMachine()
     dMem[0] = DADDR_SIZE - 1;
     dMemTag[0] = NOTUSED;
     for (loc = 1; loc<DADDR_SIZE; loc++) {
+      if (dMemTag[loc] != DATA && dMemTag[loc] != SDATA) {
 	dMem[loc] = 0;
 	dMemTag[loc] = NOTUSED;
+      }
     }
     dmemStart = dMem[0];
     dmemCount = -10;
