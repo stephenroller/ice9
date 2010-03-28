@@ -61,9 +61,23 @@ def write(ast):
     return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
 
 def program(ast):
-    return comment("START OF PROGRAM") + passthru(ast) + comment('END OF PROGRAM')
+    code5  = comment("PREAMBLE")
+    
+    # set the stack pointer
+    code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer')]
+    
+    code5 += comment("END PREAMBLE")
+    code5 += comment("START OF PROGRAM")
+    code5 += passthru(ast)
+    code5 += comment('END OF PROGRAM')
+    return code5
 
-def add(ast):
+# Binary operators ---------------------------------------------------------
+def binary_operator(opinst, ast):
+    """
+    Generic binary operator handler. opinst should one of ADD, SUB, DIV or 
+    MUL. ast is the AST including the operator node.
+    """
     left, right = ast.children
     code5  = generate_code(left)
     # The left operand is stored in AC1. Move it to AC2
@@ -71,8 +85,35 @@ def add(ast):
     # right operand is in ACC1
     code5 += generate_code(right)
     # And add the two and store in ACC1
-    code5 += [('ADD', AC1, AC1, AC2, 'Add left and right.')]
+    code5 += [(opinst, AC1, AC1, AC2, '%s left and right.' % opinst)]
     return code5
+
+def add(ast):
+    """Handles addition."""
+    return binary_operator('ADD', ast)
+
+def mul(ast):
+    """Handles multiplication."""
+    return binary_operator('MUL', ast)
+
+def div(ast):
+    """Handles division."""
+    return binary_operator('DIV', ast)
+
+def sub(ast):
+    """Handles both binary and unary subtraction."""
+    if len(ast.children) == 1:
+        # unary subtract, we really should just multiply by -1
+        return generate_code(ast.children[0]) + [
+                    ('LDC', AC2, -1, ZERO, 'Prepare to invert sign'),
+                    ('MUL', AC1, AC1, AC2, 'Invert sign.')
+                ]
+    else:
+        assert len(ast.children) == 1
+        # binary subtract
+        return binary_operator('SUB', ast)
+
+# end binary operators ------------------------------------------------------
 
 def passthru(ast):
     """
@@ -82,6 +123,8 @@ def passthru(ast):
     from operator import add
     return reduce(add, [generate_code(c) for c in ast.children], [])
 
+# core algorithm ---------------------------------------------------------
+
 # the repeated callback paradigm
 callbacks = {
     'literal': literal,
@@ -90,6 +133,9 @@ callbacks = {
     'program': program,
     'statements': passthru,
     '+': add,
+    '*': mul,
+    '/': div,
+    '-': sub,
 }
 
 def generate_code(ast):
@@ -120,6 +166,7 @@ def generate_code(ast):
     return ast.code5
 
 def generate_code_str(ast):
+    """Shorthand for creating the TM string code for the ast."""
     return code5str(generate_code(ast))
 
 if __name__ == '__main__':
