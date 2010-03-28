@@ -121,6 +121,52 @@ def sub(ast):
 
 # end binary operators ------------------------------------------------------
 
+# condition code
+def cond(ast):
+    children = ast.children
+    
+    code5 = []
+    
+    while len(children) > 1:
+        cond = children.pop(0)
+        dothen = children.pop(0)
+        
+        stmtcode = generate_code(dothen)
+        condcode = generate_code(cond)
+        
+        code5 += comment('IF condition:')
+        code5 += condcode
+        code5 += [('JEQ', AC1, len(stmtcode) + 1, PC, 'if false, jump to next cond')]
+        code5 += comment('IF was true, THEN:')
+        code5 += stmtcode
+        code5 += ['jumpend']
+        
+    if len(children) == 1:
+        stmtcode = generate_code(children.pop(0))
+        code5 += comment("ELSE:") + stmtcode
+    
+    # total number of instructions with comments excluded
+    codecount = len([1 for inst5 in code5
+                     if type(inst5) is not tuple or inst5[0] != 'comment'])
+    
+    # need to go back and replace our jump labels with the real instruction offsets
+    realcode5 = []
+    i = 0
+    for inst5 in code5:
+        if inst5 == 'jumpend':
+            # label telling us to jump to the end of the statement
+            numleft = codecount - i - 1
+            realcode5.append(('JEQ', ZERO, numleft, PC, 'jump to end of if-then-else'))
+        else:
+            realcode5.append(inst5)
+        
+        if type(inst5) is not tuple or inst5[0] != 'comment':
+            i += 1
+
+    code5 = realcode5
+    
+    return code5
+
 # core algorithm ---------------------------------------------------------
 
 # the repeated callback paradigm
@@ -134,6 +180,7 @@ callbacks = {
     '*': mul,
     '/': div,
     '-': sub,
+    'cond': cond,
 }
 
 def generate_code(ast):
