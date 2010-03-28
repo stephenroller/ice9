@@ -34,13 +34,19 @@ def code5str(code5):
 
 # NODE_TYPE RULES ------------
 def comment(comment):
+    """Makes a comment line."""
     return [('comment', 0, 0, 0, comment)]
 
 def literal(ast):
+    """Generates code for literal constants."""
     if ast.ice9_type == 'int' or ast.ice9_type == 'bool':
         return [('LDC', AC1, int(ast.value), 0, 'load constant: %s' % ast.value)]
+    elif ast.ice9_type == 'str':
+        # TODO: implement strings
+        pass
 
 def writes(ast):
+    """Handles writing to output."""
     value = ast.children[0]
     if value.ice9_type == 'int':
         return [('OUT', AC1, 0, 0, 'writing int')]
@@ -51,6 +57,7 @@ def writes(ast):
         raise ValueError("unimplmented")
 
 def write(ast):
+    """Handles write command (contains a newline)."""
     return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
 
 def program(ast):
@@ -82,7 +89,7 @@ def generate_code(ast):
         else:
             cb = callbacks.get(node.node_type, noop)
         
-        # code 4 because callbacks return 
+        # code 5 because callbacks return 5-tuples.
         setattr(node, 'code5', cb(node)) 
         code5 += node.code5
     
