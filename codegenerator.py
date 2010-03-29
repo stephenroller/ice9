@@ -148,13 +148,24 @@ def div(ast):
 def sub(ast):
     """Handles both binary and unary subtraction."""
     if len(ast.children) == 1:
-        # unary subtract, we really should just multiply by -1
-        return generate_code(ast.children[0]) + [
-                    ('LDC', AC2, -1, ZERO, 'Prepare to invert sign'),
-                    ('MUL', AC1, AC1, AC2, 'Invert sign.')
-                ]
+        if ast.ice9_type == 'int':
+            # unary subtract, we really should just multiply by -1
+            return generate_code(ast.children[0]) + comment('integer negation:') + [
+                        ('LDC', AC2, -1, ZERO, 'Prepare to invert sign.'),
+                        ('MUL', AC1, AC1, AC2, 'Invert sign.')
+                    ]
+        else:
+            # boolean negation
+            assert ast.ice9_type == 'bool'
+            return generate_code(ast.children[0]) + comment('boolean negation:') + [
+                        ('LDC', AC2, -1, ZERO, 'Prepare invert sign.'),
+                        ('MUL', AC1, AC1, AC2, 'Invert sign.'),
+                        ('LDA', AC1, 1, AC1, 'Convert back to boolean.')
+                    ]
     else:
+        # integer subtraction
         assert len(ast.children) == 2, "Subtract should only have two nodes"
+        assert ast.ice9_type == 'int', "Must be integer subtraction"
         return binary_operator('SUB', ast)
 
 # end binary operators ------------------------------------------------------
