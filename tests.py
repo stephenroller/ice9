@@ -5,59 +5,7 @@ from StringIO import StringIO
 from ice9 import Ice9Error
 from lexer import lex_source, Ice9LexicalError
 from parser import *
-
-# syntactic shorthand for all that boiler plate
-def test_parse_true(rule, source):
-    """
-    Makes a unit test that says source *should* match rule.
-    """
-    class TrueTestCase(unittest.TestCase):
-        def __str__(self):
-            return '(%s) %s' % (rule.func_name, source)
-        
-        def runTest(self):
-            assert parse(source, rule)
-    
-    return TrueTestCase
-
-def test_full_program_file(filename):
-    """
-    Makes a unit test that ensures an entire program is valid
-    """
-    return test_parse_true(program, open(filename).read())
-
-def test_parse_false(rule, source):
-    """
-    Makes a unit test that says source should *not* match rule.
-    """
-    class FalseTestCase(unittest.TestCase):
-        def __str__(self):
-            return '(not %s) "%s"' % (rule.func_name, source)
-        
-        def runTest(self):
-            assert not parse(source, rule)
-
-    return FalseTestCase
-
-
-def test_parse_error(rule, source, error_value):
-    """
-    Makes a unit test that says source should throw an error.
-    """
-    class SyntaxErrorTestCase(unittest.TestCase):
-        def __str__(self):
-            return '(error %s) %s' % (rule.func_name, source)
-        
-        def runTest(self):
-            try:
-                parse(source, rule)
-                # We should throw an error!
-                assert False, 'No error thrown'
-            except (Ice9Error, Ice9LexicalError, Ice9SyntaxError), e:
-                assert e.error == error_value, "output '%s' != expected '%s'" % \
-                                                (e.error, error_value)
-    
-    return SyntaxErrorTestCase
+from subprocess import Popen, PIPE
 
 def make_community_test(test_id):
     """
@@ -81,71 +29,83 @@ def make_community_test(test_id):
                 "output '%s' != expected '%s'" % (out.rstrip(), expected.rstrip()))
     
     return CommunityTest
-                
-# 
-# some lexer tests
-lexerr_illegal_character = test_parse_error(program, '@', 'illegal character (@)')
-lexerr_2illegal_characters = test_parse_error(program, '$ @', 'illegal character ($)')
 
-# expr tests
-true_number = test_parse_true(expr, '3')
-true_string = test_parse_true(expr, '"string test"')
-true_ident = test_parse_true(expr, 'x')
-true_arithmetic = test_parse_true(expr, 'x / 3 + 2 * (4 % 3) - x')
-true_unary_minus = test_parse_true(expr, '- x')
-true_unary_question = test_parse_true(expr, '? x')
-true_compound_unary = test_parse_true(expr, 'y + - - - x')
+def make_compile_test(source, expected):
+    """
+    Makes a unit test that compiles and runs the program, ensuring its output
+    is correct.
+    """
+    expected = expected.rstrip()
+    class CompileTest(unittest.TestCase):
+        def __str__(self):
+            return repr(source)
+        
+        def runTest(self):
+            FILENAME = 'test.tm'
+            
+            code = ice9.compile(source)
+            
+            f = open(FILENAME, 'w')
+            f.write(code)
+            f.close()
+            
+            pipe = Popen(['tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
+            pipe.stdin.write(code)
+            pipe.stdin.close()
+            
+            output = pipe.stdout.read()
+            output = output.rstrip().split('\n')
+            output = output[1:-1] # skip 'Loading...' and 'Number of instructions' lines.
+            output = '\n'.join(output).rstrip()
+            pipe.stdout.close()
+            
+            # and get rid of the test file
+            os.remove(FILENAME)
+            
+            assert output == expected, "Output (%s) is not expected (%s)" % (repr(output), repr(expected))
+    
+    return CompileTest
 
-true_proc_call = test_parse_true(expr, 'my_call(3, 4, 5)')
-true_proc_call_no_param = test_parse_true(expr, 'my_call()')
-true_array = test_parse_true(expr, 'foobar[1]')
-true_multi_array = test_parse_true(expr, 'foobar[1][i]')
+# basic writes
+write_int = make_compile_test("write 3;", "3")
+write_true = make_compile_test("write true;", "T")
+write_false = make_compile_test("write false;", "F")
 
-false_empty = test_parse_false(expr, '')
-false_blank_statement = test_parse_false(stm, '')
+# integer tests
+test_negint = make_compile_test("write - 3;", "-3")
+test_add = make_compile_test("write 1 + 2;", "3")
+test_sub = make_compile_test("write 2 - 1;", "1")
+test_mul = make_compile_test("write 2 * 3;", "6")
+test_div = make_compile_test("write 8 / 2;", "4")
 
-se_missing_op = test_parse_error(expr, '3 x', 'syntax error near x')
-se_missing_operand = test_parse_error(expr, '3 -', 'syntax error near end of file')
-se_missing_un_oper = test_parse_error(expr, '?', 'syntax error near end of file')
-se_extra_ident = test_parse_error(expr, '3 + 3 x', 'syntax error near x')
-se_unfinished_array = test_parse_error(expr, 'foobar[1][', 'syntax error near end of file')
+# boolean tests
+test_or1 = make_compile_test("write true + true;", "T")
+test_or2 = make_compile_test("write true + false;", "T")
+test_or3 = make_compile_test("write false + false;", "F")
+test_and1 = make_compile_test("write true * true;", "T")
+test_and2 = make_compile_test("write true * false;", "F")
+test_and3 = make_compile_test("write false * true;", "F")
+test_neg = make_compile_test("write - true;", "F")
+test_neg2 = make_compile_test("write - false;", "T")
 
-# stm tests
-true_empty_statement = test_parse_true(stm, ';')
-se_blank_statements = test_parse_error(stms, '', 'syntax error near end of file')
+# if tests
+test_if1 = make_compile_test("if true -> write 1; fi", "1")
+test_if2 = make_compile_test("if false -> write 1; fi", "")
+test_if3 = make_compile_test("if true -> write 1; [] else -> write 2; fi", "1")
+test_if4 = make_compile_test("if false -> write 1; [] else -> write 2; fi", "2")
+test_if5 = make_compile_test("if false -> write 1; [] true -> write 2; [] else -> write 3; fi", "2")
+test_if5 = make_compile_test("if false -> write 1; [] false -> write 2; [] else -> write 3; fi", "3")
 
-# if, fa, do
-true_if = test_parse_true(ice9_if, 'if true -> write "hello world" ; fi')
-true_if_else = test_parse_true(ice9_if, 'if true -> 3 ; [] else -> 5 ; fi')
-true_if_if_else = test_parse_true(ice9_if, 'if true -> 1 ; [] false -> 2 ; fi')
-true_if_if_else_else = test_parse_true(ice9_if, 'if true -> 2 ; [] false -> ; [] else -> ; fi')
+# var tests
+test_var = make_compile_test("var i : int; i := 3; write i;", "3")
+test_var_add = make_compile_test("var i : int; i := 1; i := i + 2; write i;", "3")
 
-se_if_missing_expr = test_parse_error(ice9_if, 'if', 'syntax error near end of file')
-se_if_missing_arrow = test_parse_error(ice9_if, 'if true', 'syntax error near end of file')
-se_if_missing_stm = test_parse_error(ice9_if, 'if true ->', 'syntax error near end of file')
-se_if_missing_fi = test_parse_error(ice9_if, 'if true -> ;', 'syntax error near end of file')
+# loop tests
+test_do_loop = make_compile_test("var i : int; do i < 3 -> i := i + 1; write i; od;", "1 \n2 \n3")
 
-# full programs
-test_bsort = test_full_program_file('examples/bsort.9.txt')
-test_dice = test_full_program_file('examples/dice.9.txt')
-test_fact = test_full_program_file('examples/fact.9.txt')
-test_fib = test_full_program_file('examples/fib.9.txt')
-test_ifact = test_full_program_file('examples/ifact.9.txt')
-test_sticks = test_full_program_file('examples/sticks.9.txt')
-test_sieve = test_full_program_file('examples/sieve.9.txt')
-
-# extra corner cases
-test_comparison = test_parse_true(expr, '8 * (3 - a) < b - 2')
-test_multi_comparison = test_parse_error(expr, 'a < b < c', 'syntax error near <')
-
-test_assignment = test_parse_true(stm, 'x := 3;')
-# technically should be a syntax error, but I plan on handling this semantically.
-test_multi_assignment = test_parse_true(stm, 'x := y := z;')
-
-for i in xrange(1, 257):
-    # Load all the community tests
-    if os.path.isfile("community_tests/tests/test%d.9" % i):
-        globals()['community_test_%d' % i] = make_community_test(i)
-
+# proc tests
+test_basic_proc = make_compile_test("proc a() write 1; end; a(); a();", "1 \n1")
+test_compnd_proc = make_compile_test("proc a(); write 0; end proc b() write 1; a(); end; b();", "1 \n0")
+test_proc_retval = make_compile_test("proc add(x, y : int) : int add := x + y; end; write add(3, 4);", "7")
 if __name__ == '__main__':
     unittest.main()
