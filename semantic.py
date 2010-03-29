@@ -179,7 +179,7 @@ def operator(opnode):
         check_and_set_type(opnode, 'nil')
         check(len(opnode.children) == 1, opnode, op + " takes one parameter.")
         check(any(equivalent_types(t, opnode.children[0].ice9_type)
-                for t in ('int', 'str')),
+                for t in ('int', 'str', 'bool')),
               opnode,
               'incompatible argument type to %s' % op)
     
