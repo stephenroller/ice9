@@ -91,9 +91,6 @@ def check_and_set_type(node, check_type):
         setattr(node, 'ice9_type', check_type)
 
 
-
-##
-
 def check(result, node, errormsg):
     if not result:
         raise Ice9SemanticError(node, errormsg)
@@ -408,7 +405,7 @@ sythenisized_callbacks = {
     'array_reference': array_reference,
     'proc': synthesized_proc,
     'proc_call': proc_call,
-    'program': notype,
+    'program': program,
     'statements': program,
     'for_loop': for_loop_synthesized,
     'do_loop': do_loop,
