@@ -12,6 +12,14 @@ PC   = 7 # points to the next instruction
 
 # Code generation utilities -------------------------------------------------
 
+def is_comment(inst5):
+    "Returns whether this 'instruction' is just a comment."
+    return type(inst5) is tuple and inst5[0] == 'comment'
+
+def code_length(code5):
+    """Returns the length of the code with comments removed."""
+    return len([1 for inst5 in code5 if not is_comment(inst5)])
+
 def push_register(reg):
     """Creates code for pushing a register onto the stack."""
     return [('LDA', SP, -1, SP, 'Push the stack pointer'),
@@ -109,7 +117,7 @@ def add(ast):
         
         code5  = comment('boolean OR')
         code5 += leftcode
-        code5 += [('JNE', AC1, len(rightcode), PC, 'short circuit boolean OR')]
+        code5 += [('JNE', AC1, code_length(rightcode), PC, 'short circuit boolean OR')]
         code5 += rightcode
         code5 += comment('end boolean OR')
         return code5
@@ -151,7 +159,7 @@ def cond(ast):
         
         code5 += comment('IF condition:')
         code5 += condcode
-        code5 += [('JEQ', AC1, len(stmtcode) + 1, PC, 'if false, jump to next cond')]
+        code5 += [('JEQ', AC1, code_length(stmtcode) + 1, PC, 'if false, jump to next cond')]
         code5 += comment('IF was true, THEN:')
         code5 += stmtcode
         code5 += ['jumpend']
@@ -161,8 +169,7 @@ def cond(ast):
         code5 += comment("ELSE:") + stmtcode
     
     # total number of instructions with comments excluded
-    codecount = len([1 for inst5 in code5
-                     if type(inst5) is not tuple or inst5[0] != 'comment'])
+    codecount = code_length(code5)
     
     # need to go back and replace our jump labels with the real instruction offsets
     realcode5 = []
@@ -175,7 +182,7 @@ def cond(ast):
         else:
             realcode5.append(inst5)
         
-        if type(inst5) is not tuple or inst5[0] != 'comment':
+        if not is_comment(code5):
             i += 1
 
     code5 = realcode5
@@ -189,10 +196,11 @@ def do_loop(ast):
     
     code5  = comment('BEGIN DO COND')
     code5 += condcode
-    code5 += [('JEQ', AC1, len(stmtcode) + 1, PC, 'jump if do cond is false')]
+    code5 += [('JEQ', AC1, code_length(stmtcode) + 1, PC, 'jump if do cond is false')]
     code5 += comment('cond true, DO:')
     code5 += stmtcode
-    code5 += [('JEQ', ZERO, -len(condcode + stmtcode) - 2, PC, 'End of DO, go back to beginning')]
+    code5 += [('JEQ', ZERO, -code_length(condcode + stmtcode) - 2, PC, 
+                      'End of DO, go back to beginning')]
     
     return code5
     
