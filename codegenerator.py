@@ -329,15 +329,28 @@ def for_loop(fornode):
     global variables
     variables.insert(0, {})
     
+    code5  = comment('BEGIN FA:')
+    
     if fornode.loopcount > 1:
         # we're in a nested for loop. Need to push the last fa variable onto
         # the stack and update its memory location
-        pass
+        loopnodes = []
+        n = fornode
+        while n.loopcount > 0:
+            if n.node_type == 'for_loop':
+                varname, vartype = n.vars[0]
+                loopnodes.append(varname)
+                variables[0][varname] = (fornode.loopcount - n.loopcount - 1, SP)
+            n = n.parent
+        
+        memloc = fornode.loopcount - 1
+        
+        code5 += comment('NESTED FA, STORE LAST FA VAR ON THE STACK')
+        code5 += push_register(AC3, 'storing last for loop variable')
     
     var, lower, upper, body = fornode.children
     varname = var.value
     
-    code5  = comment('BEGIN FA:')
     code5 += generate_code(lower)
     variables[0][varname] = (0, AC3) # store the fa variable in AC3
     code5 += [('LDA', AC3, -1, AC1, 'Store the loop lower - 1 in AC3')]
@@ -352,6 +365,8 @@ def for_loop(fornode):
               ('JLT', AC1, - jumpsize - 3, PC, 'FA LOOP JUMP')]
     code5 += comment('END FA')
     
+    if fornode.loopcount > 1:
+        code5 += pop_register(AC3, "restore old for loop variable")
     # remove the variable stack
     variables.pop(0)
     return code5
