@@ -200,6 +200,25 @@ def sub(ast):
         assert ast.ice9_type == 'int', "Must be integer subtraction"
         return binary_operator('SUB', ast)
 
+def comparison(comparenode):
+    jumpinstrs = {'=': 'JEQ', '!=': 'JNE', 
+                  '>': 'JGT', '>=': 'JGE', 
+                  '<': 'JLT', '<=': 'JLE'}
+    
+    op = comparenode.value
+    inst = jumpinstrs[op]
+    
+    code5  = comment("BEGIN COMPARISON %s" % op)
+    code5 += binary_operator('SUB', comparenode)
+    code5 += [
+        (inst, AC1, 1, PC, 'skip set to false'),
+        ('LDC', AC1, 0, 0, 'comparison is bad, set reg 1 to false'),
+        ('JEQ', ZERO, 1, PC, 'skip set to true'),
+        ('LDC', AC1, 1, 0, 'compairson is good, set reg 1 to true'),
+    ]
+    code5 += comment("END COMPARISON %s" % op)
+    return code5
+
 # end binary operators ------------------------------------------------------
 
 # condition code ----------------------------------------------------------
@@ -280,6 +299,12 @@ callbacks = {
     'do_loop': do_loop,
     'ident': ident,
     'assignment': assignment,
+    '=': comparison,
+    '!=': comparison,
+    '<': comparison,
+    '<=': comparison,
+    '>': comparison,
+    '>=': comparison,
 }
 
 def generate_code(ast):
