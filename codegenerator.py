@@ -20,6 +20,10 @@ procs = {}
 
 # Code generation utilities -------------------------------------------------
 
+def type9_size(ice9_type):
+    """Returns the full size of the ice9 type in words."""
+    return 1
+
 def is_comment(inst5):
     "Returns whether this 'instruction' is just a comment."
     return type(inst5) is tuple and inst5[0] == 'comment'
@@ -28,19 +32,23 @@ def code_length(code5):
     """Returns the length of the code with comments removed."""
     return len([1 for inst5 in code5 if not is_comment(inst5)])
 
-def push_register(reg):
+def push_register(reg, comment=None):
     """Creates code for pushing a register onto the stack."""
+    if not comment:
+        comment = 'Store reg %s on the stack' % reg
     return [('LDA', SP, -1, SP, 'Move (push) the stack pointer'),
-            ('ST', reg, 0, SP, 'Store reg %s on the stack' % reg)]
+            ('ST', reg, 0, SP, comment)]
 
-def pop_register(reg):
+def pop_register(reg, comment=None):
     """Creates code for popping a register off the stack."""
-    return [('LD', reg, 0, SP, 'Get reg %d off the stack' % reg),
+    if not comment:
+        comment = 'Get reg %d off the stack' % reg
+    return [('LD', reg, 0, SP, comment),
             ('LDA', SP, 1, SP, 'Move (pop) the stack pointer')]
 
 def push_var(varname, vartype):
     """Allocates room for a variable on the stack."""
-    return [('LDA', SP, -1, SP, "Make room for %s on the stack" % varname)]
+    return [('LDA', SP, - type9_size(vartype), SP, "Make room for %s on the stack" % varname)]
 
 def comment(comment):
     """Makes a comment line."""
@@ -104,7 +112,7 @@ def program(ast):
     # variable declarations:
     i = 1
     for var, type9 in ast.vars:
-        code5 += [('alloc', 1, 0, 0, var)] # (alloc, size, 0, 0, varname)
+        code5 += [('alloc', type9_size(type9), 0, 0, var)]
         code5 += comment('DECLARE "%s"' % var)
         variables[0][var] = i, ZERO
         i += 1
@@ -316,24 +324,65 @@ def do_loop(ast):
 
 # proc stuff ---------------------------------------------------------------
 
+# memory representation
+# +----------------------------------------------------------------------------+
+# | program... | ... | var2 | var1 | retaddr | param1 | p2 | p3 | lastfp | ... |
+# +----------------------------------------------------------------------------+
+#                    ^             ^                            ^              ^
+#                    sp            fp               fp + fpoffset           dmem
+
 def proc(procnode):
-    procname = procnode.value
-    code5  = comment('BEGIN PROC %s' % procname)
+    global variables
+    variables.insert(0, {})
     
-    code5 += passthru(procnode)
-    code5 += comment('POP return address:')
-    code5 += pop_register(AC2)
-    code5 += [('LDA', PC, 0, AC2, 'Moving return address into PC')]
+    children = procnode.children
+    procname = procnode.value
+    body = children.pop(-1)
+    
+    code5  = comment('BEGIN PROC %s' % procname)
+    code5 += [('LDA', FP, 0, SP, 'Set frame pointer')]
+    
+    # set memory locations of params
+    fpoffset = 1 
+    for p in children:
+        paramname = p.value
+        paramloc = fpoffset
+        variables[0][paramname] = (fpoffset, FP)
+        fpoffset += type9_size(fpoffset)
+    
+    # set memory locations of local variables
+    i = 0
+    for var, type9 in procnode.vars:
+        code5 += push_var(var, type9)
+        i += type9_size(type9)
+        variables[0][var] = (- i, FP)
+    
+    # generate code of proc
+    code5 += generate_code(body)
+    code5 += pop_register(AC2, 'pop return address')
+    code5 += [('LDA', SP, fpoffset, FP, 'Pop off local values from the stack')]
+    code5 += [('LD', PC, 0, FP, 'Moving return address into PC')]
     code5 += comment('END PROC %s' % procname)
+    
+    variables.pop(0)
     return code5
 
 def proc_call(pcnode):
     # push the return address
     procname = pcnode.value
     code5  = comment('BEGIN PROC CALL %s' % procname)
+    code5 += push_register(FP, 'store the frame pointer before the call')
+    
+    params = pcnode.children # calling parameters
+    params.reverse() # we want to push on in reverse so they'll be in order in mem
+    for p in params:
+        code5 += generate_code(p)
+        code5 += push_register(AC1, 'push parameter')
+    
     code5 += [('LDA', AC2, 3, PC, 'Store return address in AC2')]
-    code5 += push_register(AC2)
+    code5 += push_register(AC2, 'store the return address')
     code5 += [('call', procname, 0, 0, 'CALL %s' % procname)]
+    code5 += pop_register(FP, 'pop the frame pointer after call')
     code5 += comment('END PROC CALL %s' % procname)
     return code5
 

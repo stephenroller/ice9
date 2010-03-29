@@ -143,9 +143,14 @@ def define_var(varnode):
           'var(s) already defined in scope')
     
     define(ice9_symbols, varname, ice9_type)
-    olddefs = getattr(varnode.parent, 'vars', [])
+    
+    scopenode = varnode.parent
+    while scopenode.node_type != 'program' and scopenode.node_type != 'proc':
+        scopenode = scopenode.parent
+    
+    olddefs = getattr(scopenode, 'vars', [])
     olddefs.append((varname, expand_type(ice9_type)))
-    setattr(varnode.parent, 'vars', olddefs)
+    setattr(scopenode, 'vars', olddefs)
     varnode.kill()
 
 def param(paramnode):
