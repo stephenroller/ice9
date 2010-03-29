@@ -47,7 +47,6 @@ def first_definition(scope, name):
     
     return None
 
-
 def expand_type(typeval):
     """Keeps expanding out typeval until it hits a base."""
     if type(typeval) is str:
@@ -371,6 +370,9 @@ def for_loop_synthesized(fornode):
     check(equivalent_types(fornode.children[2].ice9_type, 'int'),
           fornode.children[2],
           'expressions in fa must evaluate to ints')
+    
+    varnode = fornode.children[0]
+    setattr(fornode, 'vars', [(varnode.value, expand_type(varnode.ice9_type))])
     
     leave_scope()
 

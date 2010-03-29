@@ -147,6 +147,8 @@ test_sc1 = make_compile_test(
     ' \n'.join(c for c in 'TTFTTFFTFF')
 )
 
+# fa loops
+test_fa1 = make_compile_test("fa i := 1 to 3 -> write i; af", "1 \n2 \n3")
 
 if __name__ == '__main__':
     unittest.main()

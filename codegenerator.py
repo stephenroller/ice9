@@ -90,7 +90,10 @@ def write(ast):
 def ident(ast):
     varname = ast.value
     memloc, relreg = first_definition(variables, varname)
-    return [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+    if relreg == SP or relreg == FP or relreg == ZERO:
+        return [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+    else:
+        return [('LDA', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
 
 def assignment(ast):
     var, val = ast.children
@@ -322,6 +325,37 @@ def do_loop(ast):
     
     return code5
 
+def for_loop(fornode):
+    global variables
+    variables.insert(0, {})
+    
+    if fornode.loopcount > 1:
+        # we're in a nested for loop. Need to push the last fa variable onto
+        # the stack and update its memory location
+        pass
+    
+    var, lower, upper, body = fornode.children
+    varname = var.value
+    
+    code5  = comment('BEGIN FA:')
+    code5 += generate_code(lower)
+    variables[0][varname] = (0, AC3) # store the fa variable in AC3
+    code5 += [('LDA', AC3, -1, AC1, 'Store the loop lower - 1 in AC3')]
+    code5 += [('LDA', AC3, 1, AC3, 'increment loop variable %s' % varname)]
+    code5 += comment('LOOP %s BODY:' % varname)
+    bodycode = generate_code(body)
+    uppercode = generate_code(upper)
+    jumpsize = code_length(bodycode + uppercode)
+    code5 += bodycode + comment('END OF FA BODY')
+    code5 += uppercode + comment('LOADED FA UPPER VALUE INTO AC1')
+    code5 += [('SUB', AC1, AC3, AC1, 'DIFFERENCE BETWEEN %s AND UPPER BOUND' % varname),
+              ('JLT', AC1, - jumpsize - 3, PC, 'FA LOOP JUMP')]
+    code5 += comment('END FA')
+    
+    # remove the variable stack
+    variables.pop(0)
+    return code5
+
 # proc stuff ---------------------------------------------------------------
 
 # memory representation
@@ -422,6 +456,7 @@ callbacks = {
     '>=': comparison,
     'proc': proc,
     'proc_call': proc_call,
+    'for_loop': for_loop,
 }
 
 def generate_code(ast):
