@@ -121,7 +121,7 @@ def sub(ast):
 
 # end binary operators ------------------------------------------------------
 
-# condition code
+# condition code ----------------------------------------------------------
 def cond(ast):
     children = ast.children
     
@@ -167,6 +167,21 @@ def cond(ast):
     
     return code5
 
+def do_loop(ast):
+    cond, stmt = ast.children
+    condcode = generate_code(cond)
+    stmtcode = generate_code(stmt)
+    
+    code5  = comment('BEGIN DO COND')
+    code5 += condcode
+    code5 += [('JEQ', AC1, len(stmtcode) + 1, PC, 'jump if do cond is false')]
+    code5 += comment('cond true, DO:')
+    code5 += stmtcode
+    code5 += [('JEQ', ZERO, -len(condcode + stmtcode) - 2, PC, 'End of DO, go back to beginning')]
+    
+    return code5
+    
+
 # core algorithm ---------------------------------------------------------
 
 # the repeated callback paradigm
@@ -181,6 +196,7 @@ callbacks = {
     '/': div,
     '-': sub,
     'cond': cond,
+    'do_loop': do_loop,
 }
 
 def generate_code(ast):
