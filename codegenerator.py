@@ -325,11 +325,11 @@ def do_loop(ast):
 # proc stuff ---------------------------------------------------------------
 
 # memory representation
-# +----------------------------------------------------------------------------+
-# | program... | ... | var2 | var1 | retaddr | param1 | p2 | p3 | lastfp | ... |
-# +----------------------------------------------------------------------------+
-#                    ^             ^                            ^              ^
-#                    sp            fp               fp + fpoffset           dmem
+# +-------------------------------------------------------------------------------+
+# | program... | ... | var2 | var1| retval | retaddr | param1 | p2 | lastfp | ... |
+# +-------------------------------------------------------------------------------+
+#                    ^                     ^                       ^              ^
+#                    sp                    fp          fp + fpoffset           dmem
 
 def proc(procnode):
     global variables
@@ -351,6 +351,10 @@ def proc(procnode):
         fpoffset += type9_size(fpoffset)
     
     # set memory locations of local variables
+    vars = procnode.vars
+    if procnode.ice9_type != 'nil':
+        vars.insert(0, (procname, procnode.ice9_type))
+    
     i = 0
     for var, type9 in procnode.vars:
         code5 += push_var(var, type9)
@@ -359,7 +363,13 @@ def proc(procnode):
     
     # generate code of proc
     code5 += generate_code(body)
+    
+    if procnode.ice9_type != 'nil':
+        # handle return value
+        code5 += [('LD', AC1, -1, FP, 'Store the return value in AC1')]
+    
     code5 += pop_register(AC2, 'pop return address')
+    
     code5 += [('LDA', SP, fpoffset, FP, 'Pop off local values from the stack')]
     code5 += [('LD', PC, 0, FP, 'Moving return address into PC')]
     code5 += comment('END PROC %s' % procname)
