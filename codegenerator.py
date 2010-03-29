@@ -15,6 +15,8 @@ PC   = 7 # points to the next instruction
 # variable locations, done the same as in type checking
 # a global stack of dictionaries.
 variables = [{}]
+# global dictionary of proc locations
+procs = {}
 
 # Code generation utilities -------------------------------------------------
 
@@ -28,13 +30,17 @@ def code_length(code5):
 
 def push_register(reg):
     """Creates code for pushing a register onto the stack."""
-    return [('LDA', SP, -1, SP, 'Push the stack pointer'),
+    return [('LDA', SP, -1, SP, 'Move (push) the stack pointer'),
             ('ST', reg, 0, SP, 'Store reg %s on the stack' % reg)]
 
 def pop_register(reg):
     """Creates code for popping a register off the stack."""
-    return [('LD', reg, 0, SP, 'Pop reg %d off the stack' % reg),
-            ('LDA', SP, 1, SP, 'Pop the stack pointer')]
+    return [('LD', reg, 0, SP, 'Get reg %d off the stack' % reg),
+            ('LDA', SP, 1, SP, 'Move (pop) the stack pointer')]
+
+def push_var(varname, vartype):
+    """Allocates room for a variable on the stack."""
+    return [('LDA', SP, -1, SP, "Make room for %s on the stack" % varname)]
 
 def comment(comment):
     """Makes a comment line."""
@@ -89,9 +95,10 @@ def assignment(ast):
 
 def program(ast):
     """Generates code for a whole program."""
-    # make sure variables are reset
-    global variables
+    # make sure variable and proc locations are reset
+    global variables, procs
     variables = [{}]
+    procs = {}
     
     code5 = comment("PREAMBLE")
     # variable declarations:
@@ -101,16 +108,42 @@ def program(ast):
         code5 += comment('DECLARE "%s"' % var)
         variables[0][var] = i, ZERO
         i += 1
-    code5.insert(1, ('JEQ', ZERO, code_length(code5), PC, 'skip variable declarations'))
+    
+    children = ast.children
+    # general program code.
+    while len(children) > 0 and children[0].node_type == 'proc':
+        procnode = children.pop(0)
+        procname = procnode.value
+        proclocation = code_length(code5) + 1
+        procs[procname] = proclocation
+        code5 += generate_code(procnode)
+        
+
+    code5.insert(1, ('JEQ', ZERO, code_length(code5), PC, 
+                        'skip variable and proc declarations'))
     
     # set the stack pointer
     code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer')]
     
     code5 += comment("END PREAMBLE")
     code5 += comment("START OF PROGRAM")
-    # general program code.
+           
     code5 += passthru(ast)
+    
     code5 += comment('END OF PROGRAM')
+    
+    # we need to go back and add all our proc call jumps
+    realcode5 = []
+    for inst5 in code5:
+        inst, r, s, t, com = inst5
+        if inst == 'call':
+            procname = r
+            memloc = procs[procname]
+            realcode5.append(('LDC', PC, memloc, ZERO, com))
+        else:
+            realcode5.append(inst5)
+            
+    code5 = realcode5
     return code5
 
 # Binary operators ---------------------------------------------------------
@@ -281,6 +314,29 @@ def do_loop(ast):
     
     return code5
 
+# proc stuff ---------------------------------------------------------------
+
+def proc(procnode):
+    procname = procnode.value
+    code5  = comment('BEGIN PROC %s' % procname)
+    
+    code5 += passthru(procnode)
+    code5 += comment('POP return address:')
+    code5 += pop_register(AC2)
+    code5 += [('LDA', PC, 0, AC2, 'Moving return address into PC')]
+    code5 += comment('END PROC %s' % procname)
+    return code5
+
+def proc_call(pcnode):
+    # push the return address
+    procname = pcnode.value
+    code5  = comment('BEGIN PROC CALL %s' % procname)
+    code5 += [('LDA', AC2, 3, PC, 'Store return address in AC2')]
+    code5 += push_register(AC2)
+    code5 += [('call', procname, 0, 0, 'CALL %s' % procname)]
+    code5 += comment('END PROC CALL %s' % procname)
+    return code5
+
 # core algorithm ---------------------------------------------------------
 
 # the repeated callback paradigm
@@ -305,6 +361,8 @@ callbacks = {
     '<=': comparison,
     '>': comparison,
     '>=': comparison,
+    'proc': proc,
+    'proc_call': proc_call,
 }
 
 def generate_code(ast):
