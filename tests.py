@@ -107,5 +107,31 @@ test_do_loop = make_compile_test("var i : int; do i < 3 -> i := i + 1; write i; 
 test_basic_proc = make_compile_test("proc a() write 1; end; a(); a();", "1 \n1")
 test_compnd_proc = make_compile_test("proc a(); write 0; end proc b() write 1; a(); end; b();", "1 \n0")
 test_proc_retval = make_compile_test("proc add(x, y : int) : int add := x + y; end; write add(3, 4);", "7")
+
+# test short circuiting
+test_sc1 = make_compile_test(
+    """
+    proc rettrue() : bool
+        rettrue := true;
+        write rettrue;
+    end
+    proc retfalse() : bool
+        retfalse := false;
+        write retfalse;
+    end
+    
+    # short circuit or, should print true true
+    write rettrue() + retfalse();
+    # long circuit or, should print false true true
+    write retfalse() + rettrue();
+    # short circuit and, should print false false
+    write retfalse() * retfalse();
+    # long circuit and, should print true false false
+    write rettrue() * retfalse();
+    """,
+    ' \n'.join(c for c in 'TTFTTFFTFF')
+)
+
+
 if __name__ == '__main__':
     unittest.main()
