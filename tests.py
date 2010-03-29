@@ -62,7 +62,9 @@ def make_compile_test(source, expected):
             # and get rid of the test file
             os.remove(FILENAME)
             
-            assert output == expected, "Output (%s) is not expected (%s)" % (repr(output), repr(expected))
+            assert output == expected, (
+                   "Output (%s) is not expected (%s)" % 
+                        (repr(output), repr(expected)))
     
     return CompileTest
 
@@ -93,20 +95,33 @@ test_if1 = make_compile_test("if true -> write 1; fi", "1")
 test_if2 = make_compile_test("if false -> write 1; fi", "")
 test_if3 = make_compile_test("if true -> write 1; [] else -> write 2; fi", "1")
 test_if4 = make_compile_test("if false -> write 1; [] else -> write 2; fi", "2")
-test_if5 = make_compile_test("if false -> write 1; [] true -> write 2; [] else -> write 3; fi", "2")
-test_if5 = make_compile_test("if false -> write 1; [] false -> write 2; [] else -> write 3; fi", "3")
-
+test_if5 = make_compile_test(
+    "if false -> write 1; [] true -> write 2; [] else -> write 3; fi", 
+    "2"
+)
+test_if5 = make_compile_test(
+    "if false -> write 1; [] false -> write 2; [] else -> write 3; fi", 
+    "3"
+)
 # var tests
 test_var = make_compile_test("var i : int; i := 3; write i;", "3")
 test_var_add = make_compile_test("var i : int; i := 1; i := i + 2; write i;", "3")
 
 # loop tests
-test_do_loop = make_compile_test("var i : int; do i < 3 -> i := i + 1; write i; od;", "1 \n2 \n3")
-
+test_do_loop = make_compile_test(
+    "var i : int; do i < 3 -> i := i + 1; write i; od;", 
+    "1 \n2 \n3"
+)
 # proc tests
 test_basic_proc = make_compile_test("proc a() write 1; end; a(); a();", "1 \n1")
-test_compnd_proc = make_compile_test("proc a(); write 0; end proc b() write 1; a(); end; b();", "1 \n0")
-test_proc_retval = make_compile_test("proc add(x, y : int) : int add := x + y; end; write add(3, 4);", "7")
+test_compnd_proc = make_compile_test(
+    "proc a(); write 0; end proc b() write 1; a(); end; b();", 
+    "1 \n0"
+)
+test_proc_retval = make_compile_test(
+    "proc add(x, y : int) : int add := x + y; end; write add(3, 4);", 
+    "7"
+)
 
 # test short circuiting
 test_sc1 = make_compile_test(
