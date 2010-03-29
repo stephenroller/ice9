@@ -115,33 +115,31 @@ def program(ast):
     # variable declarations:
     i = 1
     for var, type9 in ast.vars:
-        code5 += [('alloc', type9_size(type9), 0, 0, var)]
         code5 += comment('DECLARE "%s"' % var)
         variables[0][var] = i, ZERO
         i += 1
     
+    proccode5 = []
     children = ast.children
     # general program code.
     while len(children) > 0 and children[0].node_type == 'proc':
         procnode = children.pop(0)
         procname = procnode.value
-        proclocation = code_length(code5) + 1
+        proclocation = code_length(proccode5) + 2
         procs[procname] = proclocation
-        code5 += generate_code(procnode)
+        proccode5 += generate_code(procnode)
         
-
-    code5.insert(1, ('JEQ', ZERO, code_length(code5), PC, 
-                        'skip variable and proc declarations'))
-    
-    # set the stack pointer
-    code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer')]
-    
+    code5 += [
+        ('LD', SP, ZERO, ZERO, 'Set the stack pointer'),
+        ('JEQ', ZERO, code_length(proccode5), PC, 'skip proc definitions')
+    ]
     code5 += comment("END PREAMBLE")
+    code5 += comment("BEGIN PROCS")
+    code5 += proccode5
+    code5 += comment("END PROCS")
     code5 += comment("START OF PROGRAM")
-           
     code5 += passthru(ast)
-    
-    code5 += comment('END OF PROGRAM')
+    code5 += [('HALT', 0, 0, 0, 'END OF PROGRAM')]
     
     # we need to go back and add all our proc call jumps
     realcode5 = []
@@ -374,11 +372,11 @@ def for_loop(fornode):
 # proc stuff ---------------------------------------------------------------
 
 # memory representation
-# +-------------------------------------------------------------------------------+
-# | program... | ... | var2 | var1| retval | retaddr | param1 | p2 | lastfp | ... |
-# +-------------------------------------------------------------------------------+
-#                    ^                     ^                       ^              ^
-#                    sp                    fp          fp + fpoffset           dmem
+# +------------------------------------------------------------------+
+# | ... | var2 | var1| retval | retaddr | param1 | p2 | lastfp | ... |
+# +------------------------------------------------------------------+
+#       ^                     ^                       ^              ^
+#       sp                    fp          fp + fpoffset           dmem
 
 def proc(procnode):
     global variables
