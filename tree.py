@@ -77,7 +77,7 @@ class Tree:
 
     def __str__(self, tab=""):
         out = []
-        print_attr = ('line', 'node_type', 'value', 'ice9_type')
+        print_attr = ('line', 'node_type', 'value', 'ice9_type', 'vars')
         as_str = '\t'.join(s + ": " + str(getattr(self, s)) 
                                           for s in print_attr if hasattr(self, s))
         out.append(tab + as_str)

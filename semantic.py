@@ -146,6 +146,9 @@ def define_var(varnode):
           'var(s) already defined in scope')
     
     define(ice9_symbols, varname, ice9_type)
+    olddefs = getattr(varnode.parent, 'vars', [])
+    olddefs.append((varname, expand_type(ice9_type)))
+    setattr(varnode.parent, 'vars', olddefs)
     varnode.kill()
 
 def param(paramnode):
@@ -283,6 +286,10 @@ def inherited_proc(procnode):
     add_scope()
     procname = procnode.value
     proctype = ["proc"]
+    
+    if not hasattr(procnode, 'vars'):
+        setattr(procnode, 'vars', [])
+    
     for c in procnode.children:
         if c.node_type == 'param':
             param(c)
@@ -381,6 +388,9 @@ def cond(ifnode):
     
     check(len(ifnode.children) > 1, ifnode, 'if and do tests must evaluate to a boolean')
 
+def program(prgmnode):
+    if not hasattr(prgmnode, 'vars'):
+        setattr(prgmnode, 'vars', [])
 
 inherited_callbacks = {
     'define_type': define_type,
@@ -399,7 +409,7 @@ sythenisized_callbacks = {
     'proc': synthesized_proc,
     'proc_call': proc_call,
     'program': notype,
-    'statements': notype,
+    'statements': program,
     'for_loop': for_loop_synthesized,
     'do_loop': do_loop,
     'cond': cond

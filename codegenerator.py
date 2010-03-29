@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from semantic import first_definition
+
 # REGISTERS
 ZERO = 0 # always zero
 AC1  = 1 # Accumulator 1
@@ -9,6 +11,10 @@ ST   = 4 # Temporary storage
 FP   = 5 # points to the start of the frame
 SP   = 6 # points to the top of the stack
 PC   = 7 # points to the next instruction
+
+# variable locations, done the same as in type checking
+# a global stack of dictionaries.
+variables = [{}]
 
 # Code generation utilities -------------------------------------------------
 
@@ -67,9 +73,35 @@ def write(ast):
     """Handles write command (contains a newline)."""
     return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
 
+def ident(ast):
+    varname = ast.value
+    memloc, relreg = first_definition(variables, varname)
+    return [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+
+def assignment(ast):
+    var, val = ast.children
+    varname = var.value
+    code5  = comment('ASSIGN to %s:' % varname) + generate_code(val)
+    memloc, relreg = first_definition(variables, varname)
+    code5 += [('ST', AC1, memloc, relreg, 'STORE variable %s' % varname)]
+    code5 += comment('END ASSIGN TO %s' % varname)
+    return code5
+
 def program(ast):
     """Generates code for a whole program."""
-    code5  = comment("PREAMBLE")
+    # make sure variables are reset
+    global variables
+    variables = [{}]
+    
+    code5 = comment("PREAMBLE")
+    # variable declarations:
+    i = 1
+    for var, type9 in ast.vars:
+        code5 += [('alloc', 1, 0, 0, var)] # (alloc, size, 0, 0, varname)
+        code5 += comment('DECLARE "%s"' % var)
+        variables[0][var] = i, ZERO
+        i += 1
+    code5.insert(1, ('JEQ', ZERO, code_length(code5), PC, 'skip variable declarations'))
     
     # set the stack pointer
     code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer')]
@@ -246,6 +278,8 @@ callbacks = {
     '?': passthru,
     'cond': cond,
     'do_loop': do_loop,
+    'ident': ident,
+    'assignment': assignment,
 }
 
 def generate_code(ast):
@@ -255,7 +289,7 @@ def generate_code(ast):
     """
     def noop(ast):
         # returns empty code
-        return []
+        return comment('NOOP')
     
     code5 = []
     if ast.node_type == 'operator':
@@ -284,6 +318,10 @@ def code5str(code5):
                       'ADD', 'SUB', 'MUL', 'DIV', 'OUTNL'):
             ln = linecounter.next()
             output.append("%5d: %-9s %d,%d,%d\t\t%s" % (ln, inst, r, s, t, com))
+        elif inst == 'alloc':
+            size = r
+            for i in xrange(0, size):
+                ln = linecounter.next()
         elif inst == 'comment':
             output.append("* %s" % com)
         else:
