@@ -96,8 +96,23 @@ def binary_operator(opinst, ast):
     return code5
 
 def add(ast):
-    """Handles addition."""
-    return binary_operator('ADD', ast)
+    """Handles integer addition and boolean OR."""
+    if ast.ice9_type == 'int':
+        # integer addition
+        return binary_operator('ADD', ast)
+    else:
+        assert ast.ice9_type == 'bool'
+        # boolean OR
+        left, right = ast.children
+        leftcode = generate_code(left)
+        rightcode = generate_code(right)
+        
+        code5  = comment('boolean OR')
+        code5 += leftcode
+        code5 += [('JNE', AC1, len(rightcode), PC, 'short circuit boolean OR')]
+        code5 += rightcode
+        code5 += comment('end boolean OR')
+        return code5
 
 def mul(ast):
     """Handles multiplication."""
