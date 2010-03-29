@@ -123,8 +123,23 @@ def add(ast):
         return code5
 
 def mul(ast):
-    """Handles multiplication."""
-    return binary_operator('MUL', ast)
+    """Handles integer multiplication and boolean AND."""
+    if ast.ice9_type == 'int':
+        # integer multiplication
+        return binary_operator('MUL', ast)
+    else:
+        # boolean AND
+        assert ast.ice9_type == 'bool'
+        left, right = ast.children
+        leftcode = generate_code(left)
+        rightcode = generate_code(right)
+        
+        code5  = comment('boolean AND')
+        code5 += leftcode
+        code5 += [('JEQ', AC1, code_length(rightcode), PC, 'short circuit boolean AND')]
+        code5 += rightcode
+        code5 += comment('end boolean AND')
+        return code5
 
 def div(ast):
     """Handles division."""
