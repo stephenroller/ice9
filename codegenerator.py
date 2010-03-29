@@ -300,7 +300,7 @@ def cond(ast):
         else:
             realcode5.append(inst5)
         
-        if not is_comment(code5):
+        if not is_comment(inst5):
             i += 1
 
     code5 = realcode5
