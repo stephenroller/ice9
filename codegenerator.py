@@ -229,7 +229,6 @@ def do_loop(ast):
                       'End of DO, go back to beginning')]
     
     return code5
-    
 
 # core algorithm ---------------------------------------------------------
 
@@ -244,6 +243,7 @@ callbacks = {
     '*': mul,
     '/': div,
     '-': sub,
+    '?': passthru,
     'cond': cond,
     'do_loop': do_loop,
 }
