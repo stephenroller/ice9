@@ -55,8 +55,13 @@ def make_compile_test(source, expected):
             
             output = pipe.stdout.read()
             output = output.rstrip().split('\n')
-            output = output[1:-1] # skip 'Loading...' and 'Number of instructions' lines.
+            
+            output = output[1:] # skip 'Loading...' and 'Number of instructions' lines.
+            pos = output[-1].rindex("Number of instructions")
+            output[-1] = output[-1][:pos]
+            
             output = '\n'.join(output).rstrip()
+            
             pipe.stdout.close()
             
             # and get rid of the test file
@@ -148,7 +153,10 @@ test_sc1 = make_compile_test(
 )
 
 # fa loops
-test_fa1 = make_compile_test("fa i := 1 to 3 -> write i; af", "1 \n2 \n3")
+test_fa1 = make_compile_test("fa i := 1 to 3 -> writes i; af", "1 2 3")
+test_fa2 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes j; af; af", "1 2 3 2 3 3")
+test_fa3 = make_compile_test("fa i := 1 to 3 -> writes 1 + 2 + i; af", "4 5 6")
+test_fa2 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes 1 + 2 + i; af; af", "4 4 4 5 5 6")
 
 if __name__ == '__main__':
     unittest.main()
