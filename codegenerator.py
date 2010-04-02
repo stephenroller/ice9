@@ -530,10 +530,6 @@ def code5str(code5):
                       'ADD', 'SUB', 'MUL', 'DIV', 'OUTNL'):
             ln = linecounter.next()
             output.append("%5d: %-9s %d,%2d,%2d\t\t%s" % (ln, inst, r, s, t, com))
-        elif inst == 'alloc':
-            size = r
-            for i in xrange(0, size):
-                ln = linecounter.next()
         elif inst == 'comment':
             output.append("* %s" % com)
         else:
