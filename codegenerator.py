@@ -376,23 +376,29 @@ def for_loop(fornode):
             pmemloc = -activation_record_size[0]
         
         variables[0][outer_fa_varname] = (pmemloc, FP)
-        
     
     var, lower, upper, body = fornode.children
     varname = var.value
+    variables[0][varname] = (0, AC3) # store the fa variable in AC3
     
     code5 += generate_code(lower)
-    variables[0][varname] = (0, AC3) # store the fa variable in AC3
-    code5 += [('LDA', AC3, -1, AC1, 'Store the loop lower - 1 in AC3')]
-    code5 += [('LDA', AC3, 1, AC3, 'increment loop variable %s' % varname)]
-    code5 += comment('LOOP %s BODY:' % varname)
-    bodycode = generate_code(body)
+    code5 += [('LDA', AC3, 0, AC1, 'Store the loop lower in AC3')]
+    
+    temp = generate_code(body)
+    bodycode  = comment('LOOP %s BODY:' % varname)
+    bodycode += temp
+    bodycode += [('LDA', AC3, 1, AC3, 'increment loop variable %s' % varname)]
+    bodycode += comment('END OF FA BODY')
+    
+    code5 += [('JEQ', ZERO, code_length(bodycode), PC, 'Skip body until we check upper bound')]
+    code5 += bodycode
+    
     uppercode = generate_code(upper)
-    jumpsize = code_length(bodycode + uppercode)
-    code5 += bodycode + comment('END OF FA BODY')
-    code5 += uppercode + comment('LOADED FA UPPER VALUE INTO AC1')
+    code5 += uppercode
+    code5 += comment('LOADED FA UPPER VALUE INTO AC1')
+    jumpsize = code_length(uppercode + bodycode)
     code5 += [('SUB', AC1, AC3, AC1, 'DIFFERENCE BETWEEN %s AND UPPER BOUND' % varname),
-              ('JLT', AC1, - jumpsize - 3, PC, 'FA LOOP JUMP')]
+              ('JLE', AC1, - jumpsize - 2, PC, 'FA REPEAT JUMP')]
     code5 += comment('END FA')
     
     if fornode.loopcount > 1:
