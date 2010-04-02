@@ -56,7 +56,9 @@ def make_compile_test(source, expected):
             output = pipe.stdout.read()
             output = output.rstrip().split('\n')
             
-            output = output[1:] # skip 'Loading...' and 'Number of instructions' lines.
+            # skip 'Loading...' 
+            output = output[1:]
+            # and remove 'Number of instructions' stuff.
             pos = output[-1].rindex("Number of instructions")
             output[-1] = output[-1][:pos]
             
