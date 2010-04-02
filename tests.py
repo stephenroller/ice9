@@ -216,7 +216,27 @@ af
 """, "1 2 3 1 1 2 3 2 1 1 2 3 1 1 2 3 2 2")
 
 test_arrays1 = make_compile_test("""
-var a : int[3][2];
+var a : int[3]
+fa i := 0 to 2 ->
+    a[i] := i;
+    writes a[i];
+af;
+""",
+"0 1 2")
+
+test_arrays2 = make_compile_test("""
+var a : int[3]
+fa i := 1 to 3 ->
+    a[i - 1] := i - 1;
+af
+fa i := 1 to 3 ->
+    writes a[i - 1];
+af
+""",
+"0 1 2")
+
+test_arrays3 = make_compile_test("""
+var a : int[3][2]
 
 a[0][0] := 1;
 a[1][0] := 2;
