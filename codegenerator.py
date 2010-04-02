@@ -114,6 +114,7 @@ def program(ast):
     procs = {}
     
     code5 = comment("PREAMBLE")
+    code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer'),]
     # variable declarations:
     i = 1
     for var, type9 in ast.vars:
@@ -133,14 +134,16 @@ def program(ast):
         procs[procname] = proclocation
         proccode5 += generate_code(procnode)
         
-    code5 += [
-        ('LD', SP, ZERO, ZERO, 'Set the stack pointer'),
-        ('JEQ', ZERO, code_length(proccode5), PC, 'skip proc definitions')
-    ]
+    if len(proccode5) > 0:
+        code5 += [('JEQ', ZERO, code_length(proccode5), PC, 'skip proc definitions')]
+    
     code5 += comment("END PREAMBLE")
-    code5 += comment("BEGIN PROCS")
-    code5 += proccode5
-    code5 += comment("END PROCS")
+    
+    if len(proccode5) > 0:    
+        code5 += comment("BEGIN PROCS")
+        code5 += proccode5
+        code5 += comment("END PROCS")
+    
     code5 += comment("START OF PROGRAM")
     code5 += passthru(ast)
     code5 += [('HALT', 0, 0, 0, 'END OF PROGRAM')]
