@@ -158,7 +158,19 @@ test_sc1 = make_compile_test(
 test_fa1 = make_compile_test("fa i := 1 to 3 -> writes i; af", "1 2 3")
 test_fa2 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes j; af; af", "1 2 3 2 3 3")
 test_fa3 = make_compile_test("fa i := 1 to 3 -> writes 1 + 2 + i; af", "4 5 6")
-test_fa2 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes 1 + 2 + i; af; af", "4 4 4 5 5 6")
+test_fa4 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes 1 + 2 + i; af; af", "4 4 4 5 5 6")
+test_fa5 = make_compile_test("""
+proc doublefa () 
+    fa i := 1 to 3 ->
+        fa j := i to 3 ->
+            writes 1 + j + 2 + i;
+        af
+    af
+end
+
+doublefa();
+""",
+"5 6 7 7 8 9")
 
 if __name__ == '__main__':
     unittest.main()

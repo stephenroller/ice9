@@ -12,6 +12,8 @@ FP   = 5 # points to the start of the frame
 SP   = 6 # points to the top of the stack
 PC   = 7 # points to the next instruction
 
+activation_record_size = [0]
+
 # variable locations, done the same as in type checking
 # a global stack of dictionaries.
 variables = [{}]
@@ -118,6 +120,8 @@ def program(ast):
         code5 += comment('DECLARE "%s"' % var)
         variables[0][var] = i, ZERO
         i += 1
+    
+    activation_record_size = [i]
     
     proccode5 = []
     children = ast.children
@@ -324,7 +328,6 @@ def do_loop(ast):
     return code5
 
 def for_loop(fornode):
-    global variables
     variables.insert(0, {})
     
     code5  = comment('BEGIN FA:')
@@ -332,19 +335,26 @@ def for_loop(fornode):
     if fornode.loopcount > 1:
         # we're in a nested for loop. Need to push the last fa variable onto
         # the stack and update its memory location
-        loopnodes = []
-        n = fornode
-        while n.loopcount > 0:
-            if n.node_type == 'for_loop':
-                varname, vartype = n.vars[0]
-                loopnodes.append(varname)
-                variables[0][varname] = (fornode.loopcount - n.loopcount - 1, SP)
-            n = n.parent
         
-        memloc = fornode.loopcount - 1
+        p = fornode.parent
+        while p.node_type != 'for_loop':
+            p = p.parent
+        # p contains the last for loop
+        outer_fa_varname = p.children[0].value
+        activation_record_size[0] += 1
         
-        code5 += comment('NESTED FA, STORE LAST FA VAR ON THE STACK')
-        code5 += push_register(AC3, 'storing last for loop variable')
+        if len(activation_record_size) == 1: 
+            # global fa loop's go with global variables
+            pmemloc = activation_record_size[0]
+            code5 += [('ST', AC3, pmemloc, FP, 'storing fa variable %s in heap' % outer_fa_varname)]
+        else:
+            # proc fa loops go in the activation_record
+            code5 += comment('NESTED FA IN PROC, STORE LAST FA VAR ON THE STACK')
+            code5 += push_register(AC3, 'storing last for loop variable')
+            pmemloc = -activation_record_size[0]
+        
+        variables[0][outer_fa_varname] = (pmemloc, FP)
+        
     
     var, lower, upper, body = fornode.children
     varname = var.value
@@ -364,7 +374,13 @@ def for_loop(fornode):
     code5 += comment('END FA')
     
     if fornode.loopcount > 1:
-        code5 += pop_register(AC3, "restore old for loop variable")
+        if len(activation_record_size) == 1:
+            # get the global var back off the heap
+            code5 += [('LD', AC3, pmemloc, FP, 'restore old loop var off heap')]
+        else:
+            # get it off the stack
+            code5 += pop_register(AC3, "restore old for loop variable")
+        
     # remove the variable stack
     variables.pop(0)
     return code5
@@ -379,7 +395,7 @@ def for_loop(fornode):
 #       sp                    fp          fp + fpoffset           dmem
 
 def proc(procnode):
-    global variables
+    global variables, activation_record_size
     variables.insert(0, {})
     
     children = procnode.children
@@ -408,6 +424,8 @@ def proc(procnode):
         i += type9_size(type9)
         variables[0][var] = (- i, FP)
     
+    activation_record_size.insert(0, i)
+    
     # generate code of proc
     code5 += generate_code(body)
     
@@ -421,6 +439,7 @@ def proc(procnode):
     code5 += [('LD', PC, 0, FP, 'Moving return address into PC')]
     code5 += comment('END PROC %s' % procname)
     
+    activation_record_size.pop(0)
     variables.pop(0)
     return code5
 
