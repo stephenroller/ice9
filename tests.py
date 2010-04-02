@@ -129,6 +129,33 @@ test_proc_retval = make_compile_test(
     "proc add(x, y : int) : int add := x + y; end; write add(3, 4);", 
     "7"
 )
+test_proc_earlyreturn = make_compile_test("""
+    proc test ()
+    	writes 1;
+    	return;
+    	writes 2;
+    end
+    test();
+    writes 3;
+    """,
+    "1 3 "
+)
+test_proc_earlyreturn2 = make_compile_test("""
+    proc test() : int
+        test := 1;
+        return;
+        test := 2;
+    end
+    
+    writes test();
+    """,
+    "1 "
+)
+
+# return/exit stuff
+test_exit = make_compile_test("writes 1; exit; writes 2;", "1 ")
+test_returnexit = make_compile_test("writes 1; return; writes 2;", "1 ")
+test_proc_exit = make_compile_test("proc test () writes 1; exit; writes 2; end; test(); writes 3;", "1")
 
 # test short circuiting
 test_sc1 = make_compile_test(
@@ -167,10 +194,11 @@ proc doublefa ()
         af
     af
 end
-
 doublefa();
 """,
 "5 6 7 7 8 9")
+
+test_faexit = make_compile_test("fa i := 1 to 3 -> writes i; exit; af", "1 ")
 
 test_fa6 = make_compile_test("""
 fa i := 1 to 2 -> 

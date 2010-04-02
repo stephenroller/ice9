@@ -89,6 +89,12 @@ def write(ast):
     """Handles write command (contains a newline)."""
     return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
 
+def return9(returnnode):
+    return [('return', 0, 0, 0, 'return')]
+
+def exit9(exitnode):
+    return [('exit', 0, 0, 0, 'exit')]
+
 def ident(ast):
     varname = ast.value
     memloc, relreg = first_definition(variables, varname)
@@ -145,8 +151,21 @@ def program(ast):
         code5 += comment("END PROCS")
     
     code5 += comment("START OF PROGRAM")
+    
     code5 += passthru(ast)
+    
+    # handle all remaining exits and returns
     code5 += [('HALT', 0, 0, 0, 'END OF PROGRAM')]
+    codelen = code_length(code5)
+    instno = 0
+    for i, inst5 in enumerate(code5):
+        if is_comment(inst5):
+            continue
+        
+        if inst5[0] == "return" or inst5[0] == "exit":
+            code5[i] = ('JEQ', ZERO, codelen - instno - 2, PC, 'early exit!')
+        instno += 1
+    
     
     # we need to go back and add all our proc call jumps
     realcode5 = []
@@ -430,7 +449,12 @@ def proc(procnode):
     activation_record_size.insert(0, i)
     
     # generate code of proc
-    code5 += generate_code(body)
+    bodycode = generate_code(body)
+    bodylen = code_length(bodycode)
+    for i, inst5 in enumerate(bodycode):
+        if inst5[0] == "return":
+            bodycode[i] = ('JEQ', ZERO, bodylen - i, PC, 'early return in %s' % procname)
+    code5 += bodycode
     
     if procnode.ice9_type != 'nil':
         # handle return value
@@ -491,6 +515,8 @@ callbacks = {
     '>=': comparison,
     'proc': proc,
     'proc_call': proc_call,
+    'return': return9,
+    'exit': exit9,
     'for_loop': for_loop,
 }
 
