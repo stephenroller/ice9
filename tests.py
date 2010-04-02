@@ -172,5 +172,18 @@ doublefa();
 """,
 "5 6 7 7 8 9")
 
+test_fa6 = make_compile_test("""
+fa i := 1 to 2 -> 
+    fa i := 1 to 2 -> 
+        fa i := 1 to 3 ->
+            writes i; 
+        af
+        writes i;
+    af 
+    writes i;
+af
+""", "1 2 3 1 1 2 3 2 1 1 2 3 1 1 2 3 2 2")
+
+
 if __name__ == '__main__':
     unittest.main()
