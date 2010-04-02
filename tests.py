@@ -119,6 +119,8 @@ test_do_loop = make_compile_test(
     "var i : int; do i < 3 -> i := i + 1; write i; od;", 
     "1 \n2 \n3"
 )
+test_do_false = make_compile_test("var i : int; do i < 0 -> i := i + 1; writes i; od", "")
+
 # proc tests
 test_basic_proc = make_compile_test("proc a() write 1; end; a(); a();", "1 \n1")
 test_compnd_proc = make_compile_test(
@@ -186,7 +188,8 @@ test_fa1 = make_compile_test("fa i := 1 to 3 -> writes i; af", "1 2 3")
 test_fa2 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes j; af; af", "1 2 3 2 3 3")
 test_fa3 = make_compile_test("fa i := 1 to 3 -> writes 1 + 2 + i; af", "4 5 6")
 test_fa4 = make_compile_test("fa i := 1 to 3 -> fa j := i to 3 -> writes 1 + 2 + i; af; af", "4 4 4 5 5 6")
-test_fa5 = make_compile_test("""
+test_fa5 = make_compile_test("fa i := 1 to 0 -> writes i; af", "")
+test_fa6 = make_compile_test("""
 proc doublefa () 
     fa i := 1 to 3 ->
         fa j := i to 3 ->
