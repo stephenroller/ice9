@@ -1,13 +1,14 @@
-#!/usr/bin/env python
+    #!/usr/bin/env python
 
 from semantic import first_definition
+from itertools import izip
 
 # REGISTERS
 ZERO = 0 # always zero
 AC1  = 1 # Accumulator 1
 AC2  = 2 # Accumulator 2
 AC3  = 3 # Accumulator 3
-ST   = 4 # Temporary storage
+AC4  = 4 # Accumulator 4
 FP   = 5 # points to the start of the frame
 SP   = 6 # points to the top of the stack
 PC   = 7 # points to the next instruction
@@ -24,7 +25,62 @@ procs = {}
 
 def type9_size(ice9_type):
     """Returns the full size of the ice9 type in words."""
-    return 1
+    size = 1
+    while type(ice9_type) is list and ice9_type[0] == "array":
+        size *= ice9_type[2]
+        ice9_type = ice9_type[1]
+    return size
+
+def memlookup(varname, ast=None):
+    """
+    Returns a tuple (code5, memloc, relreg) meaning after code5,
+    varname will be in memory[memloc + reg[relreg]].
+    """
+    code5 = []
+    memloc, relreg = first_definition(variables, varname)
+    
+    if ast and len(ast.children) > 0:
+        # array reference. We need to do all our index calculations and such
+        p = ast.parent
+        while True:
+            if hasattr(p, 'vars') and any(x == varname for x, t in p.vars):
+                break
+            else:
+                p = p.parent
+        
+        arrayindexes = []
+        vartype = dict(p.vars)[varname]
+        while type(vartype) is list and vartype[0] == "array":
+            arrayindexes.append(vartype[2])
+            vartype = vartype[1]
+        
+        code5 += comment('%s is an array of size %s' % (varname, arrayindexes))
+        
+        failcode  = comment('Array out of bounds error code:')
+        failcode += [('HALT', 0, 0, 0, 'Array out of bounds')]
+        failcode += comment('End array out of bounds error code')
+        
+        indexcode  = comment('Calculating memory location:')
+        indexcode += [('LDC', AC4, 0, 0, 'Start array indexing at 0')]
+        iteration = izip(ast.children, arrayindexes, arrayindexes[1:] + [1])
+        for indexast, dimension_size, mul_size in iteration:
+            indexcode += generate_code(indexast)
+            jumpsize = code_length(failcode + indexcode)
+            indexcode += [('JLT', AC1, - jumpsize - 1, PC, 'Check index >= 0'),
+                          ('LDA', AC1, - dimension_size, AC1, 'Prepare for dimension check'),
+                          ('JGE', AC1, - jumpsize - 3, PC, 'Check index < size'),
+                          ('LDA', AC1, dimension_size, AC1, 'Undo dimension check'),
+                          ('LDC', AC2, mul_size, 0, 'Prepare for dimension multiply'),
+                          ('MUL', AC2, AC2, AC1, 'Multiply index * arraysize'),
+                          ('ADD', AC4, AC4, AC2, 'Add this increment to our offset.')]
+        
+        code5 += [('JEQ', ZERO, code_length(failcode), PC, 'Skip array out of bounds failure.')]
+        code5 += failcode
+        code5 += indexcode
+        code5 += [('ADD', AC4, AC4, relreg, 'Need to load a pointer into memory.')]
+        relreg = AC4
+    
+    return code5, memloc, relreg
 
 def is_comment(inst5):
     "Returns whether this 'instruction' is just a comment."
@@ -97,17 +153,23 @@ def exit9(exitnode):
 
 def ident(ast):
     varname = ast.value
-    memloc, relreg = first_definition(variables, varname)
-    if relreg == SP or relreg == FP or relreg == ZERO:
-        return [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+    code5, memloc, relreg = memlookup(varname, ast)
+    if relreg == SP or relreg == FP or relreg == ZERO or relreg == AC4:
+        code5 += [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
     else:
-        return [('LDA', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+        code5 += [('LDA', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
+    
+    return code5
 
 def assignment(ast):
     var, val = ast.children
     varname = var.value
+    lookupcode5, memloc, relreg = memlookup(varname, var)
+    
     code5  = comment('ASSIGN to %s:' % varname) + generate_code(val)
-    memloc, relreg = first_definition(variables, varname)
+    code5 += push_register(AC1, 'saving the set value to the stack')
+    code5 += lookupcode5
+    code5 += pop_register(AC1, 'getting the set value off the stack')
     code5 += [('ST', AC1, memloc, relreg, 'STORE variable %s' % varname)]
     code5 += comment('END ASSIGN TO %s' % varname)
     return code5
@@ -124,9 +186,9 @@ def program(ast):
     # variable declarations:
     i = 1
     for var, type9 in ast.vars:
-        code5 += comment('DECLARE "%s"' % var)
         variables[0][var] = i, ZERO
-        i += 1
+        i += type9_size(type9)
+        code5 += comment('DECLARE "%s" (size: %s)' % (var, type9_size(type9)))
     
     activation_record_size = [i]
     
@@ -368,14 +430,15 @@ def for_loop(fornode):
         if len(activation_record_size) == 1: 
             # global fa loop's go with global variables
             pmemloc = activation_record_size[0]
-            code5 += [('ST', AC3, pmemloc, FP, 'storing fa variable %s in heap' % outer_fa_varname)]
+            variables[0][outer_fa_varname] = (pmemloc, ZERO)
+            code5 += [('ST', AC3, pmemloc, ZERO, 'storing fa variable %s in heap' % outer_fa_varname)]
         else:
             # proc fa loops go in the activation_record
             code5 += comment('NESTED FA IN PROC, STORE LAST FA VAR ON THE STACK')
             code5 += push_register(AC3, 'storing last for loop variable')
             pmemloc = -activation_record_size[0]
         
-        variables[0][outer_fa_varname] = (pmemloc, FP)
+            variables[0][outer_fa_varname] = (pmemloc, FP)
     
     var, lower, upper, body = fornode.children
     varname = var.value

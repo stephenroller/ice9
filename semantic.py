@@ -238,6 +238,7 @@ def array_reference(arrnode):
         vartype = vartype[1]
     
     check_and_set_type(arrnode, vartype)
+    arrnode.node_type = 'ident'
 
 def assignment(setnode):
     cs = setnode.children

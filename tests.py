@@ -215,6 +215,24 @@ fa i := 1 to 2 ->
 af
 """, "1 2 3 1 1 2 3 2 1 1 2 3 1 1 2 3 2 2")
 
+test_arrays1 = make_compile_test("""
+var a : int[3][2];
+
+a[0][0] := 1;
+a[1][0] := 2;
+a[0][1] := 3;
+a[1][1] := 4;
+a[2][0] := 5;
+a[0][0] := 6;
+
+writes a[0][0];
+writes a[1][0];
+writes a[0][1];
+writes a[1][1];
+writes a[2][0];
+""",
+"6 2 3 4 5")
+
 
 if __name__ == '__main__':
     unittest.main()
