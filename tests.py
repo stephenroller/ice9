@@ -268,6 +268,16 @@ writes a[2][0];
 """,
 "6 2 3 4 5")
 
+test_arrays4 = make_compile_test("""
+var a : int[3];
+fa i := 0 to 5 ->
+    a[i % 3] := i;
+af
+fa i := 0 to 5 ->
+    writes a[i % 3];
+af
+""",
+"3 4 5 3 4 5")
 
 if __name__ == '__main__':
     unittest.main()
