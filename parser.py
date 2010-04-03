@@ -334,7 +334,7 @@ def med(stream):
 def med_prime(stream):
     for o in ('*', '/', '%'):
         if stream.is_next(o):
-            return med(stream, True) and med_prime(stream)
+            return high(stream, True) and med_prime(stream)
     return True
 
 @grammar_rule
