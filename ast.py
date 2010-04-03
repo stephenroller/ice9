@@ -343,14 +343,10 @@ def parse2ast(parse_tree):
                 # Empty node, let's just kill it and go onto the next
                 node.kill()
                 continue
-            
-            elif len(node.children) == 2:
-                # Let's check for unary ops
+            elif len(node.children) >= 2:
                 if (node.children[0].node_type == 'token' and
-                    node.children[0].value in UNARY_OPS and
-                    node.parent.node_type == 'rule-expansion' and
-                    (len(node.parent.children) == 1 or 
-                    (len(node.parent.children) == 2 and node.parent.value == node.value ))):
+                      node.children[0].value in UNARY_OPS and
+                      node.value == 'high'):
                         #  node.parent         node.parent
                         #     |                |
                         #    node       =>     op
@@ -363,47 +359,39 @@ def parse2ast(parse_tree):
                         node.line = node.children[0].line
                         node.children.pop(0)
                         continue
-                
-                # let's check for those binary operators
                 elif (node.children[0].node_type == 'token' and 
-                      node.children[0].value in BINARY_OPS and
-                      node.parent.node_type == 'rule-expansion' and
-                      len(node.parent.children) == 2):
-                        #   node.parent          op                      
-                        #     /  \              /  \
-                        #  left  node    =>   left right
-                        #         / \
-                        #       op   right
-                        p = node.parent
-                        left = node.parent.children[0]
-                        right = node.children[1]
-                        op = node.children[0].value
-                        p.node_type = 'operator'
-                        p.value = op
-                        p.line = node.children[0].line
-                        p.children = [left, right]
-                        left.parent = p
-                        right.parent = p
-                        continue
-                elif (node.children[0].node_type == 'token' and
-                      node.children[0].value in BINARY_OPS and
-                      node.parent.node_type == 'rule-expansion' and
-                      node.parent.value == node.value and
-                      len(node.parent.children) >= 3):
-                        # a op1 b op2 c, where precence(op1) == precendence(op2)
-                        # 
-                        #    node.parent             node.parent
-                        #   /     |     \                /  \
-                        # op1     b     node    =>     op1   op2
-                        #               /  \                /  \
-                        #             op2   c              b     c
-                        b = node.parent.children.pop(1)
-                        op2 = node.children.pop(0)
-                        node.children.insert(0, b)
-                        b.parent = node
-                        node.node_type = 'operator'
-                        node.value = op2.value
-                        node.line = op2.line
+                    node.children[0].value in BINARY_OPS and
+                    node.parent.node_type == 'rule-expansion'):
+                        if (node.parent.value != node.value):
+                            # end of the chain
+                            # node.parent
+                            #   /   \
+                            #  a   (  node  )
+                            #     /  /  |  \  \
+                            #    op1 b op2  c  ...
+                            p = node.parent
+                            index = p.children.index(node)
+                            a = p.children.pop(index - 1)
+                            
+                            # node contains an expression a OP b OP c ...
+                            # where OP are all of the same precedence. We
+                            # need to turn it into a left oriented tree.
+                            
+                            leftnode = a
+                            children = node.children
+                            while len(children) > 0:
+                                op = children.pop(0)
+                                operand = children.pop(0)
+                                newleft = Tree(value=op.value, node_type='operator', line=op.line)
+                                newleft.children = [leftnode, operand]
+                                leftnode.parent = newleft
+                                operand.parent = leftnode
+                                leftnode = newleft
+                            
+                            leftnode.parent = node
+                            node.children = [leftnode]
+                        
+                        node.remove_and_promote()
                         continue
             
             if node.value in transform_rules:
