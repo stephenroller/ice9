@@ -64,7 +64,9 @@ def memlookup(varname, ast=None):
         indexcode += [('LDC', AC4, 0, 0, 'Start array indexing at 0')]
         iteration = izip(ast.children, arrayindexes, arrayindexes[1:] + [1])
         for indexast, dimension_size, mul_size in iteration:
+            indexcode += push_register(AC4, "Pushing array address to stack")
             indexcode += generate_code(indexast)
+            indexcode += pop_register(AC4, "Popping array address from stack")
             jumpsize = code_length(failcode + indexcode)
             indexcode += [('JLT', AC1, - jumpsize - 1, PC, 'Check index >= 0'),
                           ('LDA', AC1, - dimension_size, AC1, 'Prepare for dimension check'),
@@ -330,6 +332,24 @@ def sub(ast):
         assert ast.ice9_type == 'int', "Must be integer subtraction"
         return binary_operator('SUB', ast)
 
+def modulus(modnode):
+    # a % b = c => a - (a / b * b) = c
+    left, right = modnode.children
+    leftcode, rightcode = generate_code(left), generate_code(right)
+    code5  = comment("Begin modulus")
+    code5 += leftcode
+    code5 += push_register(AC1, "Store left mod operand")
+    code5 += rightcode
+    code5 += pop_register(AC2, "Restore left mod operator")
+    code5 += push_register(AC4, "Store old AC4 for modulus calculation")
+    # AC1 = b, AC2 = a
+    code5 += [('DIV', AC4, AC2, AC1, 'modcalc: a / b'),
+              ('MUL', AC4, AC1, AC4, 'modcalc: (a / b) * b'),
+              ('SUB', AC1, AC2, AC4, 'modcalc: c = a - ((a / b) * b)')]
+    code5 += pop_register(AC4, "Restore old AC4 after modulus calculation")
+    code5 += comment("End modulus")
+    return code5
+
 def comparison(comparenode):
     jumpinstrs = {'=': 'JEQ', '!=': 'JNE', 
                   '>': 'JGT', '>=': 'JGE', 
@@ -572,6 +592,7 @@ callbacks = {
     '/': div,
     '-': sub,
     '?': passthru,
+    '%': modulus,
     'cond': cond,
     'do_loop': do_loop,
     'ident': ident,
