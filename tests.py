@@ -85,6 +85,23 @@ test_sub = make_compile_test("write 2 - 1;", "1")
 test_mul = make_compile_test("write 2 * 3;", "6")
 test_div = make_compile_test("write 8 / 2;", "4")
 
+test_arith0 = make_compile_test("writes 1 - 1 - 1;", "-1")
+test_arith1 = make_compile_test("writes 5 - 5 - 5 - 5;", "-10")
+test_arith2 = make_compile_test("writes 16 / 4 / 3;", "1")
+test_arith3 = make_compile_test("writes (4 - 3) * 2;", "2")
+test_arith4 = make_compile_test("writes - - - 5;", "-5")
+test_arith5 = make_compile_test("writes - - 5;", "5")
+test_arith6 = make_compile_test("writes 0 - - - 5;", "-5")
+
+# modulus
+test_mod1 = make_compile_test("writes 3 % 2;", "1")
+test_mod2 = make_compile_test("writes 3 % 1;", "0")
+test_mod3 = make_compile_test("writes 3 % 3;", "0")
+test_mod4 = make_compile_test("writes 5 % 2;", "1")
+test_mod5 = make_compile_test("writes -3 % 2;", "-1")
+test_mod6 = make_compile_test("writes 8 % 5 / 2;", "1")
+test_mod7 = make_compile_test("writes 8 / 5 % 2;", "1")
+
 # boolean tests
 test_or1 = make_compile_test("write true + true;", "T")
 test_or2 = make_compile_test("write true + false;", "T")
