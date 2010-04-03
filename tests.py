@@ -50,8 +50,6 @@ def make_compile_test(source, expected):
             f.close()
             
             pipe = Popen(['tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
-            pipe.stdin.write(code)
-            pipe.stdin.close()
             
             output = pipe.stdout.read()
             output = output.rstrip().split('\n')
