@@ -179,7 +179,7 @@ def assignment(ast):
 def program(ast):
     """Generates code for a whole program."""
     # make sure variable and proc locations are reset
-    global variables, procs
+    global variables, procs, activation_record_size
     variables = [{}]
     procs = {}
     
@@ -517,7 +517,7 @@ def proc(procnode):
     code5 += [('LDA', FP, 0, SP, 'Set frame pointer')]
     
     # set memory locations of local variables
-    i = 2
+    i = 0
     for var, type9 in procnode.vars:
         code5 += push_var(var, type9)
         i += type9_size(type9)
