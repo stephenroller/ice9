@@ -218,7 +218,7 @@ doublefa();
 
 test_faexit = make_compile_test("fa i := 1 to 3 -> writes i; exit; af", "1 ")
 
-test_fa6 = make_compile_test("""
+test_fa7 = make_compile_test("""
 fa i := 1 to 2 -> 
     fa i := 1 to 2 -> 
         fa i := 1 to 3 ->
@@ -285,6 +285,35 @@ fa i := 0 to 5 ->
 af
 """,
 "3 4 5 3 4 5")
+
+test_arrays5 = make_compile_test("""
+# mixed global and local array referencing
+
+type rgb = int[3]
+var color : rgb
+
+proc c(a : rgb)
+    writes a[0];
+    writes a[1];
+    writes a[2];
+    
+    a[2] := 4;
+    
+    writes color[0];
+    writes color[1];
+    writes color[2];
+end
+
+color[0] := 2;
+color[1] := 3;
+c(color);
+
+writes color[0];
+writes color[1];
+writes color[2];
+""",
+"2 3 0 2 3 4 2 3 4")
+
 
 if __name__ == '__main__':
     unittest.main()
