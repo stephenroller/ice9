@@ -516,24 +516,27 @@ def proc(procnode):
     code5  = comment('BEGIN PROC %s' % procname)
     code5 += [('LDA', FP, 0, SP, 'Set frame pointer')]
     
-    # set memory locations of params
-    fpoffset = 1 
-    for p in children:
-        paramname = p.value
-        paramloc = fpoffset
-        variables[0][paramname] = (fpoffset, FP)
-        fpoffset += type9_size(fpoffset)
-    
     # set memory locations of local variables
-    vars = procnode.vars
-    if procnode.ice9_type != 'nil':
-        vars.insert(0, (procname, procnode.ice9_type))
-    
-    i = 0
+    i = 2
     for var, type9 in procnode.vars:
         code5 += push_var(var, type9)
         i += type9_size(type9)
         variables[0][var] = (- i, FP)
+    
+    # set memory locations of params
+    fpoffset = 1 
+    for p in children:
+        paramname = p.value
+        paramtype = p.ice9_type
+        procnode.vars.append((paramname, paramtype))
+        paramloc = fpoffset
+        variables[0][paramname] = (fpoffset, FP)
+        fpoffset += 1
+    
+    # set location of return value
+    if procnode.ice9_type[1] != 'nil':
+        procnode.vars.insert(0, (procname, procnode.ice9_type[1]))
+        variables[0][procname] = (-1, FP)
     
     activation_record_size.insert(0, i)
     
