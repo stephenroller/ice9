@@ -572,7 +572,7 @@ def proc_call(pcnode):
     params.reverse() # we want to push on in reverse so they'll be in order in mem
     for p in params:
         code5 += generate_code(p)
-        code5 += push_register(AC1, 'push parameter')
+        code5 += push_register(AC1, 'push parameter %s' % p.value)
     
     code5 += [('LDA', AC2, 3, PC, 'Store return address in AC2')]
     code5 += push_register(AC2, 'store the return address')
