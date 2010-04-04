@@ -269,12 +269,19 @@ writes a[2][0];
 "6 2 3 4 5")
 
 test_arrays4 = make_compile_test("""
-var a : int[3];
+type rgb = int[3]
+var color : rgb
+
+proc setcolor(a : rgb)
+    fa i := 0 to 5 ->
+        a[i % 3] := i;
+    af
+end
+
+setcolor(color);
+
 fa i := 0 to 5 ->
-    a[i % 3] := i;
-af
-fa i := 0 to 5 ->
-    writes a[i % 3];
+    writes color[i % 3];
 af
 """,
 "3 4 5 3 4 5")

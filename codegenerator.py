@@ -31,7 +31,7 @@ def type9_size(ice9_type):
         ice9_type = ice9_type[1]
     return size
 
-def memlookup(varname, ast=None):
+def memlookup(varname, ast):
     """
     Returns a tuple (code5, memloc, relreg) meaning after code5,
     varname will be in memory[memloc + reg[relreg]].
@@ -61,7 +61,18 @@ def memlookup(varname, ast=None):
         failcode += comment('End array out of bounds error code')
         
         indexcode  = comment('Calculating memory location:')
-        indexcode += [('LDC', AC4, 0, 0, 'Start array indexing at 0')]
+        
+        if relreg == FP:
+            # we're in a proc, so what we have is a pointer that we'll
+            # still need to dereference again
+            indexcode += [('LD', AC4, memloc, relreg, 'Go ahead and dereference %s' % varname)]
+            memloc, relreg = 0, AC4
+        else:
+            # we're just in the main body, so we already know the
+            # direct location of the array.
+            indexcode += [('LDA', AC4, memloc, relreg, 'Start array indexing at 0')]
+            memloc, relreg = 0, AC4
+        
         iteration = izip(ast.children, arrayindexes, arrayindexes[1:] + [1])
         for indexast, dimension_size, mul_size in iteration:
             indexcode += push_register(AC4, "Pushing array address to stack")
@@ -79,8 +90,6 @@ def memlookup(varname, ast=None):
         code5 += [('JEQ', ZERO, code_length(failcode), PC, 'Skip array out of bounds failure.')]
         code5 += failcode
         code5 += indexcode
-        code5 += [('ADD', AC4, AC4, relreg, 'Need to load a pointer into memory.')]
-        relreg = AC4
     
     return code5, memloc, relreg
 
@@ -156,7 +165,9 @@ def exit9(exitnode):
 def ident(ast):
     varname = ast.value
     code5, memloc, relreg = memlookup(varname, ast)
-    if relreg == SP or relreg == FP or relreg == ZERO or relreg == AC4:
+    if type(ast.ice9_type) is list and ast.ice9_type[0] == "array":
+        code5 += [('LDA', AC1, memloc, relreg, 'Load pointer to %s in register 1' % varname)]
+    elif relreg == SP or relreg == FP or relreg == ZERO or relreg == AC4:
         code5 += [('LD', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
     else:
         code5 += [('LDA', AC1, memloc, relreg, 'Load %s to register 1' % varname)]
@@ -527,8 +538,6 @@ def proc(procnode):
     fpoffset = 1 
     for p in children:
         paramname = p.value
-        paramtype = p.ice9_type
-        procnode.vars.append((paramname, paramtype))
         paramloc = fpoffset
         variables[0][paramname] = (fpoffset, FP)
         fpoffset += 1

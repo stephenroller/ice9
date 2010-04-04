@@ -295,6 +295,7 @@ def inherited_proc(procnode):
     for c in procnode.children:
         if c.node_type == 'param':
             param(c)
+            procnode.vars.append((c.value, expand_type(c.ice9_type)))
             try:
                 proctype.append(["param", c.value, expand_type(c.ice9_type)])
             except ValueError, e:
