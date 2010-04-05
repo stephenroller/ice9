@@ -393,7 +393,7 @@ def comparison(comparenode):
     code5  = comment("BEGIN COMPARISON %s" % op)
     code5 += binary_operator('SUB', comparenode)
     code5 += [
-        (inst, AC1, 1, PC, 'skip set to false'),
+        (inst, AC1, 2, PC, 'skip set to false'),
         ('LDC', AC1, 0, 0, 'comparison is bad, set reg 1 to false'),
         ('JEQ', ZERO, 1, PC, 'skip set to true'),
         ('LDC', AC1, 1, 0, 'compairson is good, set reg 1 to true'),

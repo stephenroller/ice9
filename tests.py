@@ -112,6 +112,20 @@ test_and3 = make_compile_test("write false * true;", "F")
 test_neg = make_compile_test("write - true;", "F")
 test_neg2 = make_compile_test("write - false;", "T")
 
+# comparison tests
+test_compare1 = make_compile_test("writes ? (3 = 3);", "1 ")
+test_compare2 = make_compile_test("writes ? (3 = 4);", "0 ")
+test_compare3 = make_compile_test("writes ? (3 != 3);", "0 ")
+test_compare4 = make_compile_test("writes ? (3 != 4);", "1 ")
+test_compare5 = make_compile_test("writes ? (1 < 3);", "1 ")
+test_compare6 = make_compile_test("writes ? (3 < 3);", "0 ")
+test_compare7 = make_compile_test("writes ? (3 > 3);", "0 ")
+test_compare8 = make_compile_test("writes ? (4 > 3);", "1 ")
+test_compare9 = make_compile_test("writes ? (4 >= 3);", "1 ")
+test_compare10 = make_compile_test("writes ? (4 <= 3);", "0 ")
+test_compare11 = make_compile_test("writes ? (3 <= 4);", "1 ")
+
+
 # if tests
 test_if1 = make_compile_test("if true -> write 1; fi", "1")
 test_if2 = make_compile_test("if false -> write 1; fi", "")
