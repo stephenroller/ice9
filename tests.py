@@ -314,6 +314,15 @@ writes color[2];
 """,
 "2 3 0 2 3 4 2 3 4")
 
+test_array_out_of_bounds = make_compile_test(
+    "var a : int[3] ; writes a[-1];",
+    "array out of bounds exception\n"
+)
+test_array_out_of_bounds = make_compile_test(
+    "var a : int[3] ; writes a[3];",
+    "array out of bounds exception\n"
+)
+
 test_strings1 = make_compile_test("""
 write 'test';
 write 'foo';
