@@ -173,6 +173,9 @@ def write(ast):
     """Handles write command (contains a newline)."""
     return writes(ast) + [('OUTNL', 0, 0, 0, 'newline for write')]
 
+def read(ast):
+    return [('IN', AC1, 0, 0, 'Read input from command line.')]
+
 def return9(returnnode):
     return [('return', 0, 0, 0, 'return')]
 
@@ -638,6 +641,7 @@ callbacks = {
     'return': return9,
     'exit': exit9,
     'for_loop': for_loop,
+    'read': read,
 }
 
 def generate_code(ast):
