@@ -95,7 +95,7 @@ def memlookup(varname, ast):
 
 def is_comment(inst5):
     "Returns whether this 'instruction' is just a comment."
-    return type(inst5) is tuple and inst5[0] == 'comment'
+    return type(inst5) is tuple and inst5[0] in ('comment', 'string')
 
 def code_length(code5):
     """Returns the length of the code with comments removed."""
@@ -138,19 +138,32 @@ def literal(ast):
     if ast.ice9_type == 'int' or ast.ice9_type == 'bool':
         return [('LDC', AC1, int(ast.value), 0, 'load constant: %s' % ast.value)]
     elif ast.ice9_type == 'str':
-        # TODO: implement strings
-        pass
+        heapsize = activation_record_size[-1]
+        address = heapsize
+        heapsize += len(ast.value) + 1
+        activation_record_size[-1] = heapsize
+        return [('string', ast.value, 0, 0, 'string literal'),
+                ('LDC', AC1, address, 0, 'Load pointer to string into memory.')]
 
 def writes(ast):
     """Handles writing to output."""
     value = ast.children[0]
-    childcode = generate_code(ast.children[0])
+    valuecode = generate_code(value)
+    
     if value.ice9_type == 'int':
-        return childcode + [('OUT', AC1, 0, 0, 'writing int')]
+        return valuecode + [('OUT', AC1, 0, 0, 'writing int')]
     elif value.ice9_type == 'bool':
-        return childcode + [('OUTB', AC1, 0, 0, 'writing bool')]
-    else:
-        raise ValueError("unimplmented")
+        return valuecode + [('OUTB', AC1, 0, 0, 'writing bool')]
+    elif value.ice9_type == 'str':
+        return valuecode + [
+            ('LD', AC2, 0, AC1, 'Load next character into memory.'),
+            ('JEQ', AC2, 3, PC, 'If we find the null terminator, stop.'),
+            ('OUTC', AC2, 0, 0, 'Output the character'),
+            ('LDA', AC1, 1, AC1, 'Increment character pointer'),
+            ('JEQ', ZERO, -5, PC, 'Continue until null terminator')
+        ]
+    
+    return valuecode
 
 def write(ast):
     """Handles write command (contains a newline)."""
@@ -202,6 +215,7 @@ def program(ast):
         variables[0][var] = i, ZERO
         i += type9_size(type9)
         code5 += comment('DECLARE "%s" (size: %s)' % (var, type9_size(type9)))
+        code5 += [('data', 0, 0, 0, '%s initialization' % var)] * type9_size(type9)
     
     activation_record_size = [i]
     
@@ -660,6 +674,11 @@ def code5str(code5):
             output.append("%5d: %-9s %d,%2d,%2d\t\t%s" % (ln, inst, r, s, t, com))
         elif inst == 'comment':
             output.append("* %s" % com)
+        elif inst == 'data':
+            output.append('.DATA %d * %s' % (r, com))
+        elif inst == 'string':
+            output.append('.SDATA "%s" * %s' % (r, com))
+            output.append('.DATA 0 * null terminator')
         else:
             raise ValueError("Can't print this instruction: %s" % inst)
 

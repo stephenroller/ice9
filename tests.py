@@ -314,6 +314,21 @@ writes color[2];
 """,
 "2 3 0 2 3 4 2 3 4")
 
+test_strings1 = make_compile_test("""
+write 'test';
+write 'foo';
+""",
+"test\nfoo\n")
+
+test_strings2 = make_compile_test("""
+var test : str;
+
+test := "this is a test";
+
+write test;
+""",
+"this is a test\n")
+
 
 if __name__ == '__main__':
     unittest.main()
