@@ -25,21 +25,23 @@ def main(*args):
     from semantic import Ice9SemanticError
     
     if len(args) == 0:
-        # if no filename is specified, use stdin
-        f = sys.stdin
-    else:
-        # if a filename is specified, use that file
-        f = open(args[0])
+        sourcefile = sys.stdin
+        outfile = sys.stdout
+    elif len(args) == 1:
+        sourcefile = sys.stdin
+        outfile = open(args[0], 'w')
+    elif len(args) == 2:
+        sourcefile = open(args[0])
+        outfile = open(args[1], 'w')
     
-    source = f.read()
+    source = sourcefile.read()
     
     try:
         # try to parse the source and exit cleanly
         compiled = compile(source)
-        if compiled:
-            sys.exit(0)
-        else:
-            raise Ice9Error(0, 'invalid input')
+        outfile.write(compiled)
+        outfile.close()
+        sys.exit(0)
     except (Ice9Error, Ice9LexicalError, Ice9SyntaxError, Ice9SemanticError), e:
         # but if there's an error, print it out and exit.
         sys.stderr.write(str(e) + "\n")

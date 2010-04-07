@@ -690,15 +690,8 @@ def code5str(code5):
         else:
             raise ValueError("Can't print this instruction: %s" % inst)
 
-    return "\n".join(output)
+    return "\n".join(output) + "\n"
 
 def generate_code_str(ast):
     """Shorthand for creating the TM string code for the ast."""
     return code5str(generate_code(ast))
-
-# ---------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    from ice9 import compile
-    source = file('test.9').read()
-    print compile(source)
