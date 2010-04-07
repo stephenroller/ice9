@@ -675,18 +675,18 @@ def code5str(code5):
         if inst in ('LDC', 'LDA', 'LD', 'ST', 'JLT', 'JLE', 'JEQ', 
                     'JNE', 'JGE', 'JGT'):
             ln = linecounter.next() # line number
-            output.append("%5d: %-9s %d,%2d(%d)\t\t%s" % (ln, inst, r, s, t, com))
+            output.append("%5d: %-9s %d,%2d(%d)\t\t* %s" % (ln, inst, r, s, t, com))
         elif inst in ('HALT', 'IN', 'OUT', 'INB', 'OUTB', 'OUTC', 
                       'ADD', 'SUB', 'MUL', 'DIV', 'OUTNL'):
             ln = linecounter.next()
-            output.append("%5d: %-9s %d,%2d,%2d\t\t%s" % (ln, inst, r, s, t, com))
+            output.append("%5d: %-9s %d,%2d,%2d\t\t* %s" % (ln, inst, r, s, t, com))
         elif inst == 'comment':
-            output.append("* %s" % com)
+            output.append("    *  %s" % com)
         elif inst == 'data':
-            output.append('.DATA %d * %s' % (r, com))
+            output.append('.DATA  \t\t%d\t\t\t* %s' % (r, com))
         elif inst == 'string':
-            output.append('.SDATA "%s" * %s' % (r, com))
-            output.append('.DATA 0 * null terminator')
+            output.append('.SDATA \t\t"%s"' % r)
+            output.append('.DATA  \t\t0\t\t\t* null terminator')
         else:
             raise ValueError("Can't print this instruction: %s" % inst)
 
