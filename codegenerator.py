@@ -58,7 +58,7 @@ def memlookup(varname, ast):
         
         from tree import Tree
         fakeast = Tree(node_type='operator', value='write')
-        fakeast.children = [Tree(node_type='literal', value='array out of bounds exception', ice9_type='str')]
+        fakeast.children = [Tree(node_type='literal', value='Arrays bounds violation', ice9_type='str')]
         failcode  = comment('Array out of bounds error code:')
         failcode += generate_code(fakeast)
         failcode += [('HALT', 0, 0, 0, 'Array out of bounds')]

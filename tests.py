@@ -335,11 +335,11 @@ writes color[2];
 
 test_array_out_of_bounds = make_compile_test(
     "var a : int[3] ; writes a[-1];",
-    "array out of bounds exception\n"
+    "Arrays bounds violation\n"
 )
 test_array_out_of_bounds = make_compile_test(
     "var a : int[3] ; writes a[3];",
-    "array out of bounds exception\n"
+    "Arrays bounds violation\n"
 )
 
 test_strings1 = make_compile_test("""
