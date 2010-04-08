@@ -453,12 +453,24 @@ def do_loop(ast):
     condcode = generate_code(cond)
     stmtcode = generate_code(stmt)
     
+    codelen = code_length(stmtcode)
+    realstmt = []
+    i = 0
+    for inst5 in stmtcode:
+        inst, r, s, t, com = inst5
+        if inst == 'break':
+            realstmt.append(('JEQ', ZERO, codelen - i + 1, PC, 'break'))
+        else:
+            realstmt.append(inst5)
+        if not is_comment(inst5):
+            i += 1
+    
     code5  = comment('BEGIN DO COND')
     code5 += condcode
     code5 += [('JEQ', AC1, code_length(stmtcode) + 1, PC, 'jump if do cond is false')]
     code5 += comment('cond true, DO:')
-    code5 += stmtcode
-    code5 += [('JEQ', ZERO, -code_length(condcode + stmtcode) - 2, PC, 
+    code5 += realstmt
+    code5 += [('JEQ', ZERO, -code_length(condcode + realstmt) - 2, PC, 
                       'End of DO, go back to beginning')]
     
     return code5
