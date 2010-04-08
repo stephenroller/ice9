@@ -182,6 +182,9 @@ def return9(returnnode):
 def exit9(exitnode):
     return [('exit', 0, 0, 0, 'exit')]
 
+def break9(breaknode):
+    return [('break', 0, 0, 0, 'break')]
+
 def ident(ast):
     varname = ast.value
     code5, memloc, relreg = memlookup(varname, ast)
@@ -652,6 +655,7 @@ callbacks = {
     'proc_call': proc_call,
     'return': return9,
     'exit': exit9,
+    'break': break9,
     'for_loop': for_loop,
     'read': read,
 }

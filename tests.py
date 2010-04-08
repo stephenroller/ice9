@@ -73,7 +73,7 @@ def make_compile_test(source, expected, pgrminput=""):
             os.remove(FILENAME)
             
             assert output == expected, (
-                   "Output (%s) is not expected (%s)" % 
+                   "Output: \n%s\n\nis not expected:\n%s" % 
                         (repr(output), repr(expected)))
     
     return CompileTest
