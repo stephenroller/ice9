@@ -1,0 +1,14 @@
+# proc w/ array params									succeed
+
+type foo = int[2]
+var a,b : int[2]
+
+proc foo (a,b : foo)
+	a[0] := 4;
+	b[1] := 6;
+end
+
+foo(a, b);
+
+write a[0];
+write b[1];

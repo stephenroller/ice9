@@ -1,0 +1,16 @@
+# proc call with params, locals and return value
+
+proc foo(i, j : int) : bool
+	var sum : int
+	
+	sum := i + j;
+	
+	if sum < 6 ->
+		foo := true;
+	[] else ->
+		foo := false;
+	fi
+end
+
+write ? foo(1, 2);
+write ? foo(3, 3);

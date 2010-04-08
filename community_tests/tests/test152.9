@@ -1,0 +1,48 @@
+# array size order test									succeed
+
+type a = int[4][3][2][1]
+type b = int[3][2][1]
+type c = int[2][1]
+type d = int[1]
+
+var avar : a
+var bvar : b
+var cvar : c
+var dvar : d
+
+
+proc a (p : a)
+	write p[3][2][1][0];
+end
+
+proc b (p : b)
+	write p[2][1][0];
+end
+
+proc c (p : c)
+	write p[1][0];
+end
+
+proc d (p : d)
+	write p[0];
+end
+
+avar[3][2][1][0] := 17;
+bvar[2][1][0] := 16;
+cvar[1][0] := 15;
+dvar[0] := 14;
+
+a(avar);
+
+b(avar[3]);
+b(bvar);
+
+c(avar[3][2]);
+c(bvar[2]);
+c(cvar);
+
+d(avar[3][2][1]);
+d(bvar[2][1]);
+d(cvar[1]);
+d(dvar);
+

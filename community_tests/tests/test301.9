@@ -1,0 +1,9 @@
+# recursive stack limit test (param space)
+
+# this should trigger stack exception when reserving space for parameters
+proc foo (i,j,k,l,m,n,o,p,q,r,s,t : int)
+	
+	foo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+end
+
+foo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);

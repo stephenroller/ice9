@@ -1,0 +1,15 @@
+# break w/in do
+
+var i : int
+
+i := 0;
+
+do i < 5 ->
+	if i = 3 ->
+		break;
+	fi
+	write i;
+	i := i + 1;
+od
+
+write 6;

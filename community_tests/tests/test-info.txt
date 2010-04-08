@@ -1,0 +1,225 @@
+# simple literal tests
+1 int literal
+2 bool literal
+
+# write(s) tests
+3 write int
+4 writes int
+
+# int expression tests (except for mod)
+5 write 1+2;
+6 write 1-2;
+7 write 2*3;
+8 write 10/3;
+9 write -10;										# unary minus
+10 write ? true; write ? false;					# bool to int conversion
+
+# boolean expression tests (not short circuited)
+11 write ? 7 = 7; write ? (6 = 7);
+12 write ? 7 != 7; write ? (6 != 7);
+13 write ? 7 > 7; write ? (8 > 7);
+14 write ? 7 < 7; write ? (6 < 7);
+15 write ? 7 >= 7; write ? (6 >= 7);
+16 write ? 7 <= 7; write ? (8 <= 7);
+17 write ? - true; write ? - false;					# boolean not
+
+# boolean expressions (short circuited)
+18 write ? false + false; write ? false + true;		# boolean or
+19 write ? true * false; write ? true * true;		# boolean and
+
+# boolean expressions (extras)
+20 write ? true = true; write ? true = false;
+21 write ? true != true; write ? true != false;
+
+# nested expression tests
+22 nested expressions (not short circuited)
+
+# simple if tests (no short circuiting)
+23 if true -> write 1; fi if false -> write 2; fi write 3;
+24 if 7 > 6 -> write 1; fi write 2;
+25 if - true -> write 1; [] - false -> write 2; fi write 3;
+26 if 0 >= 6 -> write 1; [] 1 >= 6 -> write 2; [] 6 >= 6 -> write 3; fi
+27 if true -> write 1;
+
+# simple if then else (no short circuiting)
+28 if 0 >= 6 -> write "1"; [] else -> write "2"; fi
+29 if 0 >= 6 -> write 1; [] 1 >= 6 -> write 2; [] 6 >= 6 -> write 3; [] else -> write 4; fi write 5;
+
+# string literal tests
+30 string literal
+31 write(s) with string literal
+
+# mod tests
+32 mod tests
+33 nested mod test
+
+# simple global var tests (no arrays)
+34 assign then write all 3 basic types
+
+# do tests
+35 simple do loop
+
+# simple proc test (no params or return value)
+36 simple proc test (no params or return value)
+37 empty proc
+38 two proc calls
+39 proc call in a loop
+40 two procs
+
+# complex proc tests
+41 proc call with (simple) parameters
+42 proc call with local variables
+43 proc call with params & locals
+44 proc call with return value
+45 proc call with params, locals and return value
+46 proc call with everything (params, locals, return, temps)
+47 nested function calls with local vars & temps (tests popping of AR)
+48 function call yields proc param value
+
+# return tests
+49 simple return (no return value)
+50 multiple returns (no return value)
+51 return w/ return value
+
+# short circuited boolean tests
+52 short circuited boolean tests
+
+# fa tests
+53 simple fa in global scope
+54 simple fa in proc
+
+# return to return tests
+55 return from w/in loop
+56 return outside of proc
+
+# break tests
+57 break w/in fa
+58 break w/in fa in proc
+59 break w/in do
+60 break w/in do in proc
+
+# array tests
+61 simple 1D array
+62 simple 1D array in proc
+63 1D array with loop
+64 simple 2D array
+65 simple 2d array in proc
+66 1D array as parameter
+67 2D array as parameter
+68 2D array in proc as param to another proc
+69 int function prototype
+
+# int tests
+70 int test
+
+# array bounds tests
+71 simple 1D RHS
+72 simple 1D LHS
+73 simple 1D in proc RHS
+74 simple 1D in proc LHS
+75 simple 2D RHS
+76 simple 2D LHS
+77 simple 2D in proc RHS
+78 simple 2D in proc LHS
+
+# tests from Project 2
+80 plus, and logical or										
+81 mult and logical and										
+82 binary - with ints										
+83 / with ints												
+84 = with ints and bools									
+85 != with ints and bools									
+86 > with int												
+87 < with int												
+88 >= with int												
+89 <= with int												
+90 % with int								
+91 ? with bool												
+92 unary - with int, bool									
+93 mixed expression tests		
+94 write 5+6/3;	write "Hi there"; write "";
+95 writes 5+7; write " "; writes "Hi There";							
+96 simple symbol table tests & := type checking (int, bool & str)
+97 solo ';' test											
+98 if bool -> ; fi											
+99 if bool + - bool -> ; fi									
+100 if (int < int) -> ; fi									
+101 if false -> ; [] true -> ; fi							
+102 if false -> ; [] false -> ; [] else -> ; fi				
+
+103 var a : int \n a := 0; do a < 5 -> a := a + 1; od
+104 break in a do loop
+105 break w/ two do loops	
+106 fa i := 0 to 1 -> write i; af		
+107 fa bool-id := 0 to 1 -> ; af	
+108 fa i := 0 to ?true -> ; af
+109 fa i := 0 to 10 -> break; af
+110 break with two fa loops
+111 fa with big if
+112 two loops with same var
+113 fa i := 0 to -10 -> ; af
+114 fa i := 0 to 0 -> write i; af
+115 break w/in inner of two loops
+116 break in [] clause
+117 break in else clause
+118 use a new type name
+119 type foo = int[3]; var foo : foo foo[0] := 0; ...
+120 type foo : int type bar foo[3] var bar : bar ...
+
+121 type foo = int[2] var a : foo[2] a[0][0] := 0;
+122 type foo = int[2] var a : foo a[0] := 0;
+123 var a : int[2] a[0] := 0;
+124 var a : int[2] a[0] := 1; a[1] := -a[0];
+125 var a : int[2] a[?true] := 0;
+126 type foo = int[2] type bar = foo[2] var b : bar b[0][0] := 0;
+127 var a,b : int, c,d : bool a := 0; b := 1; d := true;
+128 type foo = int[2] type bar = int[2] var a : foo var b : bar a[0] := b[0];
+129 exit from loop
+130 return from	w/in a loop
+
+131 var i : int i := int("3");
+132 int("3");
+133 ref to parameter
+134 ref to two parameters
+135 ref to four parameters
+136 proc w/ array params
+137 first example from spec clarification
+138 second example from spec clarification
+139 large expression tests
+140 int test from spec
+141 mutual recursion
+142 proc list test
+143 var list test
+144 x [y [z[a]] [0]] [0] [0] := 0;
+145 proc overriding global scope w/ param
+146 proc overriding global scope w/ var
+147 proc overriding global type
+148 forward & proc have diff names
+149 test recursive function call
+150 type checking example from forum
+151 redefining non-returning proc's name
+152 array size order test
+153 fa & proc overriding prior loop variable defns
+154 test override of user defined type in a proc
+155 override int, bool & str in a proc
+
+# tests that require input
+250 write read;
+251 bubble sort
+252 sticks game
+253 seive
+254 iterative fact
+255 recursive fib
+256 recursive fact
+257 rand
+
+# stack failure tests
+300 recursive stack limit test (local var space) - c - fires on 1000
+301 recursive stack limit test (param space) - b - fires on 1000
+302 recursive stack limit test (return value) - a - fires on 1000
+303 recursive stack limit test (or) - 9 - fires on 1000
+304 recursive stack limit test (and) - 1 - fires on 1000
+305 recursive stack limit test (int ops) - 7 - fires on 99
+306 recursive stack limit test (fa) - 4 - fires on 96
+307 recursive stack limit test (bool ops) - 3 fires on 99
+

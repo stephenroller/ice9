@@ -1,0 +1,12 @@
+# type foo = int[2] type bar = int[2] var a : foo var b : bar a[0] := b[0]; succeed
+
+type foo = int[2] 
+type bar = int[2] 
+
+var a : foo 
+var b : bar 
+
+b[0] := 1;
+a[0] := b[0];
+
+write a[0];

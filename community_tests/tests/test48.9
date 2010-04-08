@@ -1,0 +1,11 @@
+# function call yields proc param value
+
+proc foo () : int
+	foo := 12;
+end
+
+proc bar (i : int)
+	write i;
+end
+
+bar(foo());

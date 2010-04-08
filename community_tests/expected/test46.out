@@ -1,0 +1,7 @@
+Loading file: generated/test46.tm
+m > 4 || m <= 2
+m <= 4 && m > 2
+m > 4 || m <= 2
+6 
+0 
+Number of instructions executed = 691

@@ -1,0 +1,10 @@
+# ref to four parameters									succeed
+
+proc foo(a, b : int, c : bool, d : str)
+	a + b;
+	if c ->
+		write d;
+	fi
+end
+
+foo(0, 0, true, "Hi");

@@ -1,0 +1,10 @@
+# recursive stack limit test (local var space)
+
+proc foo ()
+	# this should trigger stack exception when reserving space for local variables
+	var a : int[100];
+	
+	foo();
+end
+
+foo();

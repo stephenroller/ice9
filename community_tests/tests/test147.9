@@ -1,0 +1,18 @@
+# proc overriding global type								succeed
+
+type foo = bool
+
+var b : foo
+
+proc bar (b2 : foo)
+	type foo = int
+	
+	var i : foo
+	
+	i := 7;
+	write i+1;
+end
+
+b := true;
+bar(b);
+write ?b;

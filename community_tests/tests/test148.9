@@ -1,0 +1,12 @@
+# forward & proc have diff names							succeed
+
+forward foo(a, b : int, c : bool, d : str)
+
+proc foo(e, f : int, g : bool, h : str)
+	write e;
+	write f;
+	write ?g;
+	write h;
+end
+
+foo(0, 1, true, "Hi");

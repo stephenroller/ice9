@@ -1,0 +1,29 @@
+# proc list test											succeed
+
+proc foo(a, b, c, d, e : int, f, g, h, i : bool)
+
+	a := 1;
+	b := 2;
+	c := 3;
+	d := 4;
+	e := 5;
+
+	f := true;
+	g := true;
+	h := true;
+	i := true;
+	
+	write a;
+	write b;
+	write c;
+	write d;
+	write e;
+
+	write ?f;
+	write ?g;
+	write ?h;
+	write ?i;	
+end
+
+foo(0, 1, 2, 3, 4, true, true, true, true);
+

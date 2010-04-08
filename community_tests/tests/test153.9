@@ -1,0 +1,18 @@
+#  fa & proc overriding prior loop variable defns					succeed
+
+var i : int
+
+proc foo(i : int)
+
+	fa i := 0 to 1 ->
+		writes i;
+		writes "";
+	af
+
+    write "";
+end
+
+fa i := 0 to 1 ->
+	write i;
+	foo(i);
+af

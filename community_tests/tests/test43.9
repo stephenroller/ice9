@@ -1,0 +1,24 @@
+# proc call with params & locals
+
+var i : int
+var l : int
+
+proc foo (m : int, b : bool)
+	var j, k : int
+	
+	j := 7;
+	k := 9;
+	if b ->
+		i := i + j + k + m;
+	[] else ->
+		i := i + j + k;
+	fi
+end
+
+i := 16;
+l := 0;
+foo(100, false);
+write i;
+foo(-32, true);
+write i;
+write l;

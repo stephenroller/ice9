@@ -1,0 +1,14 @@
+# proc call in a loop
+
+proc foo()
+	write 1;
+end
+
+var i : int
+
+i := 0;
+
+do i < 5 ->
+	foo();
+	i := i + 1;
+od

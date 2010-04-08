@@ -1,0 +1,12 @@
+# recursive stack limit test (and)
+
+# this should catch the push for the short circuited OR
+proc foo ()
+	if true * false ->
+		;
+	fi
+	
+	foo();
+end
+
+foo();

@@ -1,0 +1,18 @@
+# break in a do loop										succeed
+
+var i : int
+
+i := 0;
+
+do true ->
+	write i;
+	
+	if i >= 3 ->
+		break;
+		write "should not see";
+	fi
+	
+	i := i + 1;
+od
+	
+write "after break";

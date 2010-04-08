@@ -1,0 +1,14 @@
+Loading file: generated/test251.tm
+Input length of array (1-100):
+Enter integer value: Input 1 : Enter integer value: Input 2 : Enter integer value: Input 3 : Enter integer value: Input 4 : Enter integer value: Input 5 : Enter integer value: Input 6 : Enter integer value: Input 7 : Enter integer value: Input 8 : Enter integer value: Input 9 : Enter integer value: Input 10 : Enter integer value: Sorted list:
+0 
+1 
+2 
+2 
+3 
+3 
+7 
+9 
+13 
+13 
+Number of instructions executed = 6872

@@ -1,0 +1,14 @@
+# break w/in fa in proc
+
+proc foo()
+	fa i := 1 to 10 ->
+		if i = 7 ->
+			break;
+		fi
+		
+		write i;
+	af
+end
+
+foo();
+write 11;

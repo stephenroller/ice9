@@ -1,0 +1,27 @@
+# mutual recursion										succeed
+
+var i : int
+
+forward a (p : int)
+
+proc b (p : int)
+	if i > 4 ->
+		return;
+	fi
+
+	i := i + 1;	
+	write "b";
+
+	a(p);
+end
+
+proc a (p : int)
+	write "a";
+	
+	b(p);
+end
+
+i := 0;
+b(0);
+i := 0;
+a(0);

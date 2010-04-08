@@ -1,0 +1,16 @@
+# short circuited boolean tests
+
+proc foo () : bool
+	foo := true;
+	write 1;
+end
+
+if true + foo() ->			# logical or
+	write 2;
+fi
+
+if -(false * foo()) ->			# logical and
+	write 3;
+fi
+
+write 4;

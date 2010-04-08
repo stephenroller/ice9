@@ -1,0 +1,26 @@
+# 2D array as parameter
+
+type array2 = int[4][2]
+var pi : array2
+
+proc foo(pi2 : array2)
+	write pi2[0][0];
+	write pi2[1][0];
+	write pi2[2][0];
+	write pi2[3][0];
+	write pi2[0][1];
+	write pi2[1][1];
+	write pi2[2][1];
+	write pi2[3][1];
+end
+
+pi[0][0] := 3;
+pi[1][0] := 2;
+pi[2][0] := 1;
+pi[3][0] := 0;
+pi[0][1] := -1;
+pi[1][1] := -2;
+pi[2][1] := -3;
+pi[3][1] := -4;
+
+foo(pi);

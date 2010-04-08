@@ -1,0 +1,36 @@
+# proc call with everything (params, locals, return, temps)
+
+var i, j : int
+
+proc foo (m : int) : str
+	var k, l : int
+	var b : bool
+	
+	k := 3;
+	l := 2;
+	
+	i := k + l + m;
+
+	if i > 9 ->
+		b := true;
+	[] i > 7 ->
+		b := false;
+	[] else ->
+		b := true;
+	fi
+
+	if b ->
+		foo := "m > 4 || m <= 2";
+	[] else ->
+		foo := "m <= 4 && m > 2";
+	fi
+
+end
+
+i := 0;
+j := 0;
+write foo(6);
+write foo(4);
+write foo(1);
+write i;
+write j;

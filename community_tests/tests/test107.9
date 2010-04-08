@@ -1,0 +1,13 @@
+# fa bool-id := 0 to 1 -> ; af								succeed
+
+var b : bool
+
+b := false;
+
+fa b := 0 to 1 -> 
+	write b + 10; 
+af
+
+if b -> 
+	write 'Done';
+fi

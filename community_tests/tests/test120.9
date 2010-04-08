@@ -1,0 +1,12 @@
+# type foo : int type bar foo[3] var bar : bar ...		succeed
+
+type foo = int 
+type bar = foo[3] 
+
+var bar : bar 
+
+bar[0] := 0;
+bar[1] := 1;
+bar[2] := 2;
+
+write bar[1];

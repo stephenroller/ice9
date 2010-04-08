@@ -1,0 +1,18 @@
+# proc call with local variables
+
+var i : int
+var l : int
+
+proc foo ()
+	var j, k : int
+	
+	j := 7;
+	k := 9;
+	i := j + k;
+end
+
+i := 0;
+l := 0;
+foo();
+write i;
+write l;

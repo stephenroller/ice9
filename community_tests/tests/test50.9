@@ -1,0 +1,17 @@
+# multiple returns (no return value)
+
+proc foo (b : bool)
+  if b ->
+	write 1;
+	return;
+  [] else ->
+	write 2;
+	return;
+  fi
+  
+  write 3;
+end
+
+foo(true);
+foo(false);
+write 4;

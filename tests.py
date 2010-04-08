@@ -1,6 +1,7 @@
 import unittest
 import ice9
 import os
+import sys
 from StringIO import StringIO
 from ice9 import Ice9Error
 from lexer import lex_source, Ice9LexicalError
@@ -11,26 +12,27 @@ def make_community_test(test_id):
     """
     Makes a unit test that runs a community test.
     """
-    class CommunityTest(unittest.TestCase):
-        def __str__(self):
-            return '(community test %d)' % test_id
-        
-        def runTest(self):
-            fakestderr = StringIO()
-            realstderr, sys.stderr = sys.stderr, fakestderr
-            try:
-                ice9.main('community_tests/tests/test%d.9' % test_id)
-            except SystemExit:
-                pass
-            sys.stderr = realstderr
-            out = fakestderr.getvalue()
-            expected = file('community_tests/expected/test%d.out' % test_id).read()
-            assert out.rstrip() == expected.rstrip(), (
-                "output '%s' != expected '%s'" % (out.rstrip(), expected.rstrip()))
+    sourcefile = 'community_tests/tests/test%d.9' % test_id
+    expectedfile = 'community_tests/expected/test%d.out' % test_id
+    inputfile = 'community_tests/tests/input%d.txt' % test_id
     
-    return CommunityTest
+    try:
+        source = open(sourcefile).read()
+        expected = open(expectedfile).read()
+        expected = expected[0:expected.rindex("Number of ")]
+        expected = expected[expected.index("\n")+1:]
+    except IOError, e:
+        return
+    
+    if os.path.exists(inputfile):
+        inputtext = open(inputfile).read()
+    else:
+        inputtext = ""
+        
+    return make_compile_test(source, expected, inputtext)
+    
 
-def make_compile_test(source, expected):
+def make_compile_test(source, expected, pgrminput=""):
     """
     Makes a unit test that compiles and runs the program, ensuring its output
     is correct.
@@ -50,6 +52,9 @@ def make_compile_test(source, expected):
             f.close()
             
             pipe = Popen(['tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
+            
+            if pgrminput:
+                pipe.stdin.write(pgrminput)
             
             output = pipe.stdout.read()
             output = output.rstrip().split('\n')
@@ -352,6 +357,8 @@ write test;
 """,
 "this is a test\n")
 
+for i in xrange(1, 258):
+    globals()["community_test%d" % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()

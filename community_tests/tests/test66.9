@@ -1,0 +1,21 @@
+# 1D array as parameter
+
+type array1 = int[4]
+
+var pi : array1
+
+proc foo(pi2 : array1)
+	write pi2[0];
+	write pi2[1];
+	write pi2[2];
+	write pi2[3];
+end
+
+pi[0] := 3;
+pi[1] := 2;
+pi[2] := 1;
+pi[3] := 0;
+
+foo(pi);
+
+

@@ -1,0 +1,14 @@
+# simple 2D array in proc
+
+proc foo(i,j : int)
+	var pi : int[2][5]
+
+	pi[i][j] := 3;
+	write pi[i][j];
+	write i;
+	write j;
+end
+
+foo(1, 4);
+foo(0, 3);
+

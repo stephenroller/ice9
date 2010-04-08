@@ -1,0 +1,11 @@
+# recursive stack limit test (int ops) - fires on 99
+
+proc foo()
+	var b : bool
+	
+	b := (0 > 3) * (3 < 4) + (4 <= 6);
+	
+	foo();
+end
+
+foo();

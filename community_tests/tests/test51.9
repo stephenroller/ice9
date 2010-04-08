@@ -1,0 +1,19 @@
+# return w/ return value
+
+proc foo (b : bool) : int
+	foo := 3;
+	
+	if b ->
+		foo := 1;
+		return;
+	[] else ->
+		foo := 2;
+		return;
+	fi
+
+	foo := 3;
+end
+
+write foo(true);
+write foo(false);
+write 4;

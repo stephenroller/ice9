@@ -1,0 +1,11 @@
+# recursive stack limit test (int ops) - fires on 99
+
+proc foo()
+	var i : int
+	
+	i := 100 / 3 + 56 % 7 - 3;
+	
+	foo();
+end
+
+foo();
