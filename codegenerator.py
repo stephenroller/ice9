@@ -520,8 +520,20 @@ def for_loop(fornode):
     bodycode += [('LDA', AC3, 1, AC3, 'increment loop variable %s' % varname)]
     bodycode += comment('END OF FA BODY')
     
+    codelen = code_length(bodycode)
+    realbody = []
+    i = 0
+    for inst5 in bodycode:
+        inst, r, s, t, com = inst5
+        if inst == 'break':
+            realbody.append(('JEQ', ZERO, codelen - i + 2, PC, 'break'))
+        else:
+            realbody.append(inst5)
+        if not is_comment(inst5):
+            i += 1
+    
     code5 += [('JEQ', ZERO, code_length(bodycode), PC, 'Skip body until we check upper bound')]
-    code5 += bodycode
+    code5 += realbody
     
     uppercode = generate_code(upper)
     code5 += uppercode
