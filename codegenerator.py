@@ -577,6 +577,8 @@ def proc(procnode):
     
     # set memory locations of local variables
     i = 0
+    if procnode.ice9_type[1] != 'nil':
+        i += 1
     for var, type9 in procnode.vars:
         code5 += push_var(var, type9)
         i += type9_size(type9)
@@ -600,9 +602,13 @@ def proc(procnode):
     # generate code of proc
     bodycode = generate_code(body)
     bodylen = code_length(bodycode)
+    instno = 0
     for i, inst5 in enumerate(bodycode):
+        if not is_comment(inst5):
+            instno += 1
         if inst5[0] == "return":
-            bodycode[i] = ('JEQ', ZERO, bodylen - i, PC, 'early return in %s' % procname)
+            bodycode[i] = ('JEQ', ZERO, bodylen - instno + 1, PC, 'early return in %s' % procname)
+        
     code5 += bodycode
     
     if procnode.ice9_type != 'nil':
