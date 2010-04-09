@@ -452,28 +452,28 @@ def cond(ast):
     return code5
 
 def do_loop(ast):
-    cond, stmt = ast.children
+    cond, body = ast.children
     condcode = generate_code(cond)
-    stmtcode = generate_code(stmt)
+    bodycode = generate_code(body)
     
-    codelen = code_length(stmtcode)
-    realstmt = []
+    codelen = code_length(bodycode)
+    realbody = []
     i = 0
-    for inst5 in stmtcode:
+    for inst5 in bodycode:
         inst, r, s, t, com = inst5
         if inst == 'break':
-            realstmt.append(('JEQ', ZERO, codelen - i + 1, PC, 'break'))
+            realbody.append(('JEQ', ZERO, codelen - i + 1, PC, 'break'))
         else:
-            realstmt.append(inst5)
+            realbody.append(inst5)
         if not is_comment(inst5):
             i += 1
     
     code5  = comment('BEGIN DO COND')
     code5 += condcode
-    code5 += [('JEQ', AC1, code_length(stmtcode) + 1, PC, 'jump if do cond is false')]
+    code5 += [('JEQ', AC1, code_length(bodycode) + 1, PC, 'jump if do cond is false')]
     code5 += comment('cond true, DO:')
-    code5 += realstmt
-    code5 += [('JEQ', ZERO, -code_length(condcode + realstmt) - 2, PC, 
+    code5 += realbody
+    code5 += [('JEQ', ZERO, -code_length(condcode + realbody) - 2, PC, 
                       'End of DO, go back to beginning')]
     
     return code5
