@@ -629,6 +629,9 @@ def proc_call(pcnode):
     # push the return address
     procname = pcnode.value
     code5  = comment('BEGIN PROC CALL %s' % procname)
+    for r in (AC2, AC3, AC4):
+        code5 += push_register(r, 'save registers before proc call')
+    
     code5 += push_register(FP, 'store the frame pointer before the call')
     
     params = pcnode.children # calling parameters
@@ -641,6 +644,10 @@ def proc_call(pcnode):
     code5 += push_register(AC2, 'store the return address')
     code5 += [('call', procname, 0, 0, 'CALL %s' % procname)]
     code5 += pop_register(FP, 'pop the frame pointer after call')
+    
+    for r in (AC4, AC3, AC2):
+        code5 += pop_register(r, 'remember registers from before proc call')
+    
     code5 += comment('END PROC CALL %s' % procname)
     return code5
 
