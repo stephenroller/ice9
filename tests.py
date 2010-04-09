@@ -51,7 +51,7 @@ def make_compile_test(source, expected, pgrminput=""):
             f.write(code)
             f.close()
             
-            pipe = Popen(['tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
+            pipe = Popen(['./tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
             
             if pgrminput:
                 pipe.stdin.write(pgrminput)
