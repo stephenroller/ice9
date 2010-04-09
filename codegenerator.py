@@ -462,7 +462,7 @@ def do_loop(ast):
     for inst5 in bodycode:
         inst, r, s, t, com = inst5
         if inst == 'break':
-            realbody.append(('JEQ', ZERO, codelen - i + 1, PC, 'break'))
+            realbody.append(('JEQ', ZERO, codelen - i, PC, 'break'))
         else:
             realbody.append(inst5)
         if not is_comment(inst5):
