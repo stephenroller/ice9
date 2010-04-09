@@ -159,13 +159,13 @@ def writes(ast):
     elif value.ice9_type == 'bool':
         return valuecode + [('OUTB', AC1, 0, 0, 'writing bool')]
     elif value.ice9_type == 'str':
-        return valuecode + [
+        return valuecode + push_register(AC2) + [
             ('LD', AC2, 0, AC1, 'Load next character into memory.'),
             ('JEQ', AC2, 3, PC, 'If we find the null terminator, stop.'),
             ('OUTC', AC2, 0, 0, 'Output the character'),
             ('LDA', AC1, 1, AC1, 'Increment character pointer'),
             ('JEQ', ZERO, -5, PC, 'Continue until null terminator')
-        ]
+        ] + pop_register(AC2)
     
     return valuecode
 
