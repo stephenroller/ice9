@@ -99,7 +99,7 @@ def memlookup(varname, ast):
 
 def is_comment(inst5):
     "Returns whether this 'instruction' is just a comment."
-    return type(inst5) is tuple and inst5[0] in ('comment', 'string')
+    return type(inst5) is tuple and inst5[0] in ('comment', 'string', 'data')
 
 def code_length(code5):
     """Returns the length of the code with comments removed."""
@@ -220,14 +220,14 @@ def program(ast):
     code5 = comment("PREAMBLE")
     code5 += [('LD', SP, ZERO, ZERO, 'Set the stack pointer'),]
     # variable declarations:
-    i = 1
+    address = 1
     for var, type9 in ast.vars:
-        variables[0][var] = i, ZERO
-        i += type9_size(type9)
+        variables[0][var] = address, ZERO
+        address += type9_size(type9)
         code5 += comment('DECLARE "%s" (size: %s)' % (var, type9_size(type9)))
         code5 += [('data', 0, 0, 0, '%s initialization' % var)] * type9_size(type9)
     
-    activation_record_size = [i]
+    activation_record_size = [address]
     
     proccode5 = []
     children = ast.children
@@ -492,18 +492,19 @@ def for_loop(fornode):
             p = p.parent
         # p contains the last for loop
         outer_fa_varname = p.children[0].value
+        pmemloc = activation_record_size[0]
         activation_record_size[0] += 1
         
         if len(activation_record_size) == 1: 
             # global fa loop's go with global variables
-            pmemloc = activation_record_size[0]
             variables[0][outer_fa_varname] = (pmemloc, ZERO)
-            code5 += [('ST', AC3, pmemloc, ZERO, 'storing fa variable %s in heap' % outer_fa_varname)]
+            code5 += [('data', 0, 0, 0, '%s initialization' % outer_fa_varname),
+                      ('ST', AC3, pmemloc, ZERO, 'storing fa variable %s in heap' % outer_fa_varname)]
         else:
             # proc fa loops go in the activation_record
             code5 += comment('NESTED FA IN PROC, STORE LAST FA VAR ON THE STACK')
             code5 += push_register(AC3, 'storing last for loop variable')
-            pmemloc = -activation_record_size[0]
+            pmemloc = -pmemloc
         
             variables[0][outer_fa_varname] = (pmemloc, FP)
     
