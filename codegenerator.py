@@ -154,10 +154,8 @@ def writes(ast):
     value = ast.children[0]
     valuecode = generate_code(value)
     
-    if value.ice9_type == 'int':
+    if value.ice9_type in ('int', 'bool'):
         return valuecode + [('OUT', AC1, 0, 0, 'writing int')]
-    elif value.ice9_type == 'bool':
-        return valuecode + [('OUTB', AC1, 0, 0, 'writing bool')]
     elif value.ice9_type == 'str':
         return valuecode + push_register(AC2) + [
             ('LD', AC2, 0, AC1, 'Load next character into memory.'),

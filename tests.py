@@ -80,8 +80,8 @@ def make_compile_test(source, expected, pgrminput=""):
 
 # basic writes
 write_int = make_compile_test("write 3;", "3")
-write_true = make_compile_test("write true;", "T")
-write_false = make_compile_test("write false;", "F")
+write_true = make_compile_test("write true;", "1")
+write_false = make_compile_test("write false;", "0")
 
 # integer tests
 test_negint = make_compile_test("write - 3;", "-3")
@@ -108,14 +108,14 @@ test_mod6 = make_compile_test("writes 8 % 5 / 2;", "1")
 test_mod7 = make_compile_test("writes 8 / 5 % 2;", "1")
 
 # boolean tests
-test_or1 = make_compile_test("write true + true;", "T")
-test_or2 = make_compile_test("write true + false;", "T")
-test_or3 = make_compile_test("write false + false;", "F")
-test_and1 = make_compile_test("write true * true;", "T")
-test_and2 = make_compile_test("write true * false;", "F")
-test_and3 = make_compile_test("write false * true;", "F")
-test_neg = make_compile_test("write - true;", "F")
-test_neg2 = make_compile_test("write - false;", "T")
+test_or1 = make_compile_test("write true + true;", "1")
+test_or2 = make_compile_test("write true + false;", "1")
+test_or3 = make_compile_test("write false + false;", "0")
+test_and1 = make_compile_test("write true * true;", "1")
+test_and2 = make_compile_test("write true * false;", "0")
+test_and3 = make_compile_test("write false * true;", "0")
+test_neg = make_compile_test("write - true;", "0")
+test_neg2 = make_compile_test("write - false;", "1")
 
 # comparison tests
 test_compare1 = make_compile_test("writes ? (3 = 3);", "1 ")
@@ -214,7 +214,7 @@ test_sc1 = make_compile_test(
     # long circuit and, should print true false false
     write rettrue() * retfalse();
     """,
-    ' \n'.join(c for c in 'TTFTTFFTFF')
+    ' \n'.join(c for c in '1101100100')
 )
 
 # fa loops
