@@ -624,9 +624,40 @@ def proc(procnode):
     variables.pop(0)
     return code5
 
+def str_to_int(strnode):
+    code5  = comment("converting string to integer:")
+    code5 += passthru(strnode)
+    # okay, a pointer to the string should be in AC1
+    code5 += push_register(AC2)
+    code5 += push_register(AC4)
+    code5 += [('LDC', AC4, 0, 0, 'Start with a sum of 0'),
+              ('LD', AC2, 0, AC1, 'Load the next character into memory')]
+    
+    loop  = push_register(AC1)
+    loop += [('LDC', AC1, 10, 0, 'Prepare for multiply'),
+              ('MUL', AC4, AC4, AC1, 'sum = sum * 10')]
+    loop += pop_register(AC1)
+    loop += [('LDA', AC2, -ord("0"), AC2, "Subtract the ascii '0'"),
+             ('ADD', AC4, AC4, AC2, 'sum = sum + nextdigit'),
+             ('LDA', AC1, 1, AC1, 'increment string pointer'),
+             ('JEQ', ZERO, -code_length(loop) - 6, PC, 'Loop through rest of string')]
+    
+    code5 += [('JEQ', AC2, code_length(loop), PC, "Skip if we've hit the null terminator")]
+    code5 += loop
+    code5 += [('LDA', AC1, 0, AC4, 'Move the int value int AC1')]
+    code5 += pop_register(AC4)
+    code5 += pop_register(AC2)
+    
+    return code5
+
 def proc_call(pcnode):
     # push the return address
     procname = pcnode.value
+    
+    if procname == 'int':
+        # special case
+        return str_to_int(pcnode)
+    
     code5  = comment('BEGIN PROC CALL %s' % procname)
     for r in (AC2, AC3, AC4):
         code5 += push_register(r, 'save registers before proc call')
