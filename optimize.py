@@ -6,6 +6,8 @@ from itertools import takewhile
 
 from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 
+JUMP_INSTS = ('JEQ', 'JNE', 'JLT', 'JLE', 'JGT', 'JGE')
+
 class CFGNode:
     "Represents a node in the Control Flow Diagram"
     inst5 = (None, None, None, None, None)
@@ -62,7 +64,7 @@ def construct_CFG(code5):
     for node in cfg:
         inst, r, s, t, com = node.inst5
         
-        if inst in ('JEQ', 'JNE', 'JLT', 'JLE', 'JGT', 'JGE'):
+        if inst in JUMP_INSTS:
             # hey, a jump! need to set the in and out links.
             
             # this instruction, depending on value of reg[r], 
@@ -132,7 +134,7 @@ if __name__ == '__main__':
     
     source = """
     if true ->
-    write 3;
+    write 3 + 4;
     write 8;
     [] false ->
     write 4;
