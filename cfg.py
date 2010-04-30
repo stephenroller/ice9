@@ -118,6 +118,12 @@ def yield_blocks(cfg):
     if block:
         yield block
 
+def remove_dead_jumps(block):
+    print "***"
+    for cfgnode in block:
+        if cfgnode.inst5
+    return False
+
 def optimize(code5):
     # first let's strip out comments and data.
     from codegenerator import is_comment
@@ -136,11 +142,24 @@ def optimize(code5):
     
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
+    
+    # and finally we begin running some optimizations
+    optimizations = [remove_dead_jumps]
+    
     for block in yield_blocks(cfg):
         print "Block: %d" % len(block)
         for b in block:
             print b.inst5
         print "-" * 40
+    
+        while True:
+            optimized = False
+            for opt in optimizations:
+                optimized = optimized or opt(block)
+            
+            if not optimized:
+                # none of our optimizations optimized; we're done!
+                break
     
     return data + realcode
         
