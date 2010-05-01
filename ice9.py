@@ -20,7 +20,7 @@ def compile(source, optimize=True):
     
     ast = check_semantics(parse2ast(parse(source)))
     if optimize:
-        from astoptimize import optimize_ast
+        from astoptimizer import optimize_ast
         optimize_ast(ast)
     
     code = generate_code(ast)
