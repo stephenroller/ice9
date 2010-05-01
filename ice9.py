@@ -17,7 +17,12 @@ def compile(source):
     from ast import parse2ast
     from semantic import check_semantics
     from codegenerator import generate_code_str
-    return generate_code_str(check_semantics(parse2ast(parse(source))))
+    from astoptimize import optimize_ast
+    
+    ast = check_semantics(parse2ast(parse(source)))
+    optimize_ast(ast)
+    
+    return generate_code_str(ast)
 
 def main(*args):
     from parser import Ice9SyntaxError
