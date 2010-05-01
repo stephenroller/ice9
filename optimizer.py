@@ -64,10 +64,8 @@ def optimize(code5):
 
 
 if __name__ == '__main__':
-    from parser import parse
-    from ast import parse2ast
-    from semantic import check_semantics
-    from codegenerator import generate_code, code5str
+    from ice9 import compile
+    
     
     source = """
     if true ->
@@ -78,10 +76,7 @@ if __name__ == '__main__':
     fi
     """
     
-    code5 = generate_code(check_semantics(parse2ast(parse(source))))
-    
-    print code5str(code5)
+    print compile(source, False)
     print "-" * 80
     print
-    
-    print code5str(optimize(code5))
+    print compile(source, True)
