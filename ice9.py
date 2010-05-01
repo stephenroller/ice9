@@ -12,17 +12,23 @@ class Ice9Error(Exception):
     def __str__(self):
         return "line %d: %s" % (self.line, str(self.error))
 
-def compile(source):
+def compile(source, optimize=True):
     from parser import parse
     from ast import parse2ast
     from semantic import check_semantics
-    from codegenerator import generate_code_str
-    from astoptimize import optimize_ast
+    from codegenerator import generate_code, code5str
     
     ast = check_semantics(parse2ast(parse(source)))
-    optimize_ast(ast)
+    if optimize:
+        from astoptimize import optimize_ast
+        optimize_ast(ast)
     
-    return generate_code_str(ast)
+    code = generate_code(ast)
+    if optimize:
+        import optimizer
+        code = optimizer.optimize(code)
+    
+    return code5str(code)
 
 def main(*args):
     from parser import Ice9SyntaxError
