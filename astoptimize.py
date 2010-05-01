@@ -5,6 +5,7 @@ def sub_(*L):
         return operator.sub(*L)
     else:
         return operator.neg(*L)
+
 bool_operators = {
     '+': operator.or_,
     '*': operator.and_,
@@ -25,7 +26,7 @@ int_operators = {
     '%': operator.mod,
 }
 
-def optimize_ast(ast):
+def constant_propagation(ast):
     for node in list(ast.postfix_iter()):
         if node.node_type != 'operator':
             continue
@@ -53,7 +54,19 @@ def optimize_ast(ast):
         node.value = func(*operands)
         node.children = []
 
+def static_str_to_int(ast):
+    for node in list(ast.postfix_iter()):
+        if (node.node_type == 'proc_call' and node.value == 'int' and
+            node.children[0].node_type == 'literal'):
+                # can get away with converting this string at compile time.
+                node.node_type = 'literal'
+                node.value = int(node.children[0].value)
+                node.children = []
+
+def optimize_ast(ast):
+    static_str_to_int(ast)
+    constant_propagation(ast)
 
 if __name__ == '__main__':
     from ice9 import compile
-    print compile("write int('3');")
+    print compile("write int('4') + 3 + int('8');")
