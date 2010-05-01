@@ -18,9 +18,10 @@ def node_equal(node, pattern):
     return inst_equal(node.inst5, pattern)
 
 def remove_dead_jumps(block):
-    for cfgnode in block:
+    for i, cfgnode in enumerate(block):
         if node_equal(cfgnode, (JUMP_PAT, WILD, 0, PC)):
             cfgnode.remove()
+            del block[i]
             return True
     return False
 
@@ -46,25 +47,16 @@ def optimize(code5):
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
     
-    # first optimization, just get rid of all our useless jumps
-    remove_dead_jumps(cfg)
-    
     # and finally we begin running some optimizations
-    
-    # for block in yield_blocks(cfg):
-    #     print "Block: %d" % len(block)
-    #     for b in block:
-    #         print b.inst5
-    #     print "-" * 40
-    # 
-    #     while True:
-    #         optimized = False
-    #         for opt in optimizations:
-    #             optimized = optimized or opt(block)
-    #         
-    #         if not optimized:
-    #             # none of our optimizations optimized; we're done!
-    #             break
+    for block in yield_blocks(cfg):
+        while True:
+            optimized = False
+            for opt in optimizations:
+                optimized = optimized or opt(block)
+            
+            if not optimized:
+                # none of our optimizations optimized; we're done!
+                break
     
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
