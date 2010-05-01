@@ -1,10 +1,31 @@
+import re
 from cfg import construct_CFG, yield_blocks
+from itertools import izip
+from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
+
+WILD = ".*"
+JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
+
+def inst_equal(inst5, pattern):
+    assert len(pattern) == 4
+    assert len(inst5) == 5
+    for p, i in izip(pattern, inst5):
+        if not (p == WILD or p == i or re.match("^%s$" % p, str(i))):
+            return False
+    return True
+
+def node_equal(node, pattern):
+    return inst_equal(node.inst5, pattern)
 
 def remove_dead_jumps(block):
-    print "***"
     for cfgnode in block:
-        pass
+        if node_equal(cfgnode, (JUMP_PAT, WILD, 0, PC)):
+            cfgnode.remove()
+            return True
     return False
+
+
+optimizations = [remove_dead_jumps]
 
 def optimize(code5):
     # first let's strip out comments and data.
@@ -25,25 +46,28 @@ def optimize(code5):
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
     
+    # first optimization, just get rid of all our useless jumps
+    remove_dead_jumps(cfg)
+    
     # and finally we begin running some optimizations
-    optimizations = [remove_dead_jumps]
     
-    for block in yield_blocks(cfg):
-        print "Block: %d" % len(block)
-        for b in block:
-            print b.inst5
-        print "-" * 40
+    # for block in yield_blocks(cfg):
+    #     print "Block: %d" % len(block)
+    #     for b in block:
+    #         print b.inst5
+    #     print "-" * 40
+    # 
+    #     while True:
+    #         optimized = False
+    #         for opt in optimizations:
+    #             optimized = optimized or opt(block)
+    #         
+    #         if not optimized:
+    #             # none of our optimizations optimized; we're done!
+    #             break
     
-        while True:
-            optimized = False
-            for opt in optimizations:
-                optimized = optimized or opt(block)
-            
-            if not optimized:
-                # none of our optimizations optimized; we're done!
-                break
-    
-    return data + realcode
+    optimizedcode = [n.inst5 for n in cfg]
+    return data + optimizedcode
         
 
 

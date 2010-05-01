@@ -47,6 +47,16 @@ class CFGNode:
             index += 1
         
         return n
+    
+    def remove(self):
+        if self.prev:
+            self.prev.next = self.next
+        if self.next:
+            self.next.prev = self.prev
+
+        for inlink in self.inlinks:
+            inlink.outlink = self.next
+        
 
 def construct_CFG(code5):
     "Creates a control flow graph for the given code5."
@@ -117,3 +127,4 @@ def yield_blocks(cfg):
             block = []
     if block:
         yield block
+
