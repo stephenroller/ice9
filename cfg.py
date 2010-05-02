@@ -139,13 +139,13 @@ def yield_blocks(cfg):
 def fix_jumps(cfg):
     for cfgnode in cfg:
         if cfgnode.outlink:
-            inst, r, s, t, com = cfgnode.outlink.inst5
+            inst, r, s, t, com = cfgnode.inst5
             if inst in JUMP_INSTS and t == PC:
-                s = cfgnode.outlink.index() - cfgnode.index() + 1
+                s = cfgnode.outlink.index() - cfgnode.index() - 1
             elif inst == 'LDA' and r == PC and t == PC:
-                s = cfgnode.outlink.index() - cfgnode.index() + 1
+                s = cfgnode.outlink.index() - cfgnode.index() - 1
             elif r == PC and (inst == 'LDC' or (inst == 'LDA' and t == ZERO)):
-                s = cfgnode.outlink.index() + 1
-            cfgnode.outlink.inst5 = (inst, r, s, t, com)
+                s = cfgnode.outlink.index() - 1
+            cfgnode.inst5 = (inst, r, s, t, com)
                 
     
