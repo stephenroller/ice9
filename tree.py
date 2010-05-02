@@ -29,7 +29,8 @@ class Tree:
         """
         # hack to make sure we don't accidentally lose ice9 typing
         if hasattr(self.children[0], 'ice9_type'):
-            assert not hasattr(self, 'ice9_type')
+            assert not hasattr(self, 'ice9_type') or \
+                    self.ice9_type == self.children[0].ice9_type
             setattr(self, 'ice9_type', self.children[0].ice9_type)
         
         if hasattr(self.children[0], 'loopcount'):

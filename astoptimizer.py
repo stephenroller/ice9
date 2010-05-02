@@ -91,8 +91,48 @@ def cond_elimination(ast):
     
     return False
 
+def remove_arithmetic_identities(ast):
+    for node in list(ast.postfix_iter()):
+        if node.node_type != 'operator' or len(node.children) != 2:
+            continue
+        
+        left, right = node.children
+        if left.node_type == 'literal':
+            literal, dynamic = left, right
+        elif right.node_type == 'literal':
+            literal, dynamic = right, left
+        else:
+            # Neither must be a literal.
+            continue
+        
+        if node.value in ('+', '-') and literal.value == 0:
+            if node.value == '+' or right.value == 0:
+                node.children = [dynamic]
+                node.become_child()
+            elif node.value == '-' and left.value == 0:
+                node.children = [dynamic]
+        elif node.value == '*':
+            if literal.value == 0:
+                node.children = [literal]
+                node.become_child()
+            elif literal.value == 1:
+                node.children = [dynamic]
+                node.become_child()
+        elif node.value in ('%', '/'):
+            if right.value == 0:
+                from ice9 import Ice9Error
+                raise Ice9Error(node.line, "Cannot divide by zero!")
+            else:
+                node.children = [literal]
+                node.become_child()
+        
+                
+        
+
 def optimize_ast(ast):
     static_str_to_int(ast)
+    constant_propagation(ast)
+    remove_arithmetic_identities(ast)
     constant_propagation(ast)
     cond_elimination(ast)
 
@@ -102,14 +142,7 @@ if __name__ == '__main__':
 
 
     source = """
-    if read < 4 ->
-    write 3 + 4;
-    write 8;
-    [] true ->
-    write 4;
-    [] else ->
-    write 5;
-    fi
+    write read * 1;
     """
 
     print compile(source, False)
