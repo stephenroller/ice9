@@ -1,4 +1,5 @@
 import operator
+import math
 
 def sub_(*L):
     if len(L) == 2:
@@ -18,12 +19,19 @@ bool_operators = {
     '=': operator.eq,
 }
 
+def div(a, b):
+    """Integer division like in TM."""
+    c = a // b
+    if c < 0:
+        c += 1
+    return c
+
 int_operators = {
     '+': operator.add,
     '-': sub_,
     '*': operator.mul,
-    '/': operator.div,
-    '%': operator.mod,
+    '/': div,
+    '%': lambda a,n: a - div(a, n) * n,
 }
 
 def constant_propagation(ast):
