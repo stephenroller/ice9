@@ -60,7 +60,10 @@ def static_str_to_int(ast):
             node.children[0].node_type == 'literal'):
                 # can get away with converting this string at compile time.
                 node.node_type = 'literal'
-                node.value = int(node.children[0].value)
+                try:
+                    node.value = int(node.children[0].value)
+                except ValueError:
+                    node.value = 0
                 node.children = []
 
 def cond_elimination(ast):
@@ -142,7 +145,9 @@ if __name__ == '__main__':
 
 
     source = """
+    if read > 3 ->
     write read * 1;
+    fi
     """
 
     print compile(source, False)
