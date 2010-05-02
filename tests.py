@@ -38,20 +38,14 @@ def make_compile_test(source, expected, pgrminput=""):
     is correct.
     """
     expected = expected.rstrip()
+    
     class CompileTest(unittest.TestCase):
         def __str__(self):
             return repr(source)
         
-        def runTest(self):
-            FILENAME = 'test.tm'
-            
-            code = ice9.compile(source)
-            
-            f = open(FILENAME, 'w')
-            f.write(code)
-            f.close()
-            
-            pipe = Popen(['./tm', '-b', FILENAME], stdin=PIPE, stdout=PIPE, close_fds=True)
+        def _run_file(self, filename):
+            pipe = Popen(['./tm', '-b', filename], 
+                         stdin=PIPE, stdout=PIPE, close_fds=True)
             
             if pgrminput:
                 pipe.stdin.write(pgrminput)
@@ -69,12 +63,31 @@ def make_compile_test(source, expected, pgrminput=""):
             
             pipe.stdout.close()
             
-            # and get rid of the test file
-            os.remove(FILENAME)
+            return output
+        
+        def _run_source(self, source, optimize):
+            import tempfile
+            code = ice9.compile(source, optimize)
+            # f = tempfile.NamedTemporaryFile('w', suffix='.tm')
+            f = open("test.tm", "w")
+            f.write(code)
+            f.close()
+            output = self._run_file("test.tm")
+            return output
             
-            assert output == expected, (
-                   "Output: \n%s\n\nis not expected:\n%s" % 
-                        (repr(output), repr(expected)))
+        
+        def runTest(self):
+            unoptimized_output = self._run_source(source, False)
+            
+            assert unoptimized_output == expected, (
+                   "Unoptimized output: \n%s\n\nis not expected:\n%s" % 
+                        (repr(unoptimized_output), repr(expected)))
+            
+            optimized_output = self._run_source(source, True)
+            
+            assert optimized_output == expected, (
+                   "Optimized output: \n%s\n\nis not expected:\n%s" % 
+                        (repr(optimized_output), repr(expected)))
     
     return CompileTest
 
@@ -357,8 +370,8 @@ write test;
 """,
 "this is a test\n")
 
-for i in xrange(1, 258):
-    globals()["community_test%d" % i] = make_community_test(i)
+# for i in xrange(1, 258):
+#     globals()["community_test%d" % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()
