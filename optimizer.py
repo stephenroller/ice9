@@ -50,7 +50,7 @@ def remove_unnecessary_loads(block):
 
 optimizations = [remove_dead_jumps]
 
-def optimize(code5):
+def reformat_code5(code5):
     # first let's strip out comments and data.
     data = []
     realcode = []
@@ -63,7 +63,10 @@ def optimize(code5):
             data.append(inst5)
         else:
             realcode.append(inst5)
-    code5 = realcode
+    return data, realcode
+
+def optimize(code5):
+    data, code5 = reformat_code5(code5)
     
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
@@ -88,14 +91,22 @@ def optimize(code5):
 
 if __name__ == '__main__':
     from ice9 import compile
+    from tests import *
     
-    source = """
-    if read > 3 ->
-        write 3;
-    fi
-    """
+    source = """var a : int[3]
+fa i := 1 to 3 ->
+    a[i - 1] := i - 1;
+af
+fa i := 1 to 3 ->
+    writes a[i - 1];
+af
+"""
+    
+    test_fa6 = make_compile_test(source, "0 1 2")
     
     print compile(source, False)
     print "-" * 80
     print
     print compile(source, True)
+    
+    test_fa6().runTest()
