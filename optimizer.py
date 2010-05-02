@@ -14,6 +14,13 @@ def inst_equal(inst5, pattern):
             return False
     return True
 
+# def match_sequential(block, pattern):
+#     for i in range(0, len(block) - len(pattern)):
+#         window = block[i:]
+#         matches = all(node_equal(c, p) for c, p in izip(window, pattern))
+#         return window
+#     return False
+
 def node_equal(node, pattern):
     return inst_equal(node.inst5, pattern)
 
@@ -25,8 +32,23 @@ def remove_dead_jumps(block):
             return True
     return False
 
+def remove_unnecessary_loads(block):
+    i = 0
+    for a, b in izip(block, block[1:]):
+        insta, ra, sa, ta, coma = a.inst5
+        instb, rb, sb, tb, comb = b.inst5
+        
+        if (insta == 'ST' and instb == 'LD' and ra == rb and 
+            sa == sb and ta == tb):
+                b.remove()
+                del block[i + 1]
+                return True
+        
+        i += 1
+    return False
 
-optimizations = [remove_dead_jumps]
+
+optimizations = [remove_dead_jumps, remove_unnecessary_loads]
 
 def optimize(code5):
     # first let's strip out comments and data.
@@ -68,11 +90,10 @@ if __name__ == '__main__':
     
     
     source = """
-    if true ->
-    write 3 + 4;
-    write 8;
-    [] false ->
-    write 4;
+    var foo : int;
+    foo := 3;
+    if foo > 3 ->
+        write foo;
     fi
     """
     
