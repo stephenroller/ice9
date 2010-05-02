@@ -48,6 +48,14 @@ class CFGNode:
         
         return n
     
+    def index(self):
+        c = 0
+        n = self
+        while n is not None:
+            c += 1
+            n = n.prev
+        return c
+    
     def remove(self):
         if self.prev:
             self.prev.next = self.next
@@ -128,3 +136,16 @@ def yield_blocks(cfg):
     if block:
         yield block
 
+def fix_jumps(cfg):
+    for cfgnode in cfg:
+        if cfgnode.outlink:
+            inst, r, s, t, com = cfgnode.outlink.inst5
+            if inst in JUMP_INSTS and t == PC:
+                s = cfgnode.outlink.index() - cfgnode.index() + 1
+            elif inst == 'LDA' and r == PC and t == PC:
+                s = cfgnode.outlink.index() - cfgnode.index() + 1
+            elif r == PC and (inst == 'LDC' or (inst == 'LDA' and t == ZERO)):
+                s = cfgnode.outlink.index() + 1
+            cfgnode.outlink.inst5 = (inst, r, s, t, com)
+                
+    

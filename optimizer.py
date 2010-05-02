@@ -1,7 +1,7 @@
 import re
-from cfg import construct_CFG, yield_blocks
+from cfg import construct_CFG, yield_blocks, fix_jumps
 from itertools import izip
-from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
+from codegenerator import is_comment, ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 
 WILD = ".*"
 JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
@@ -48,11 +48,10 @@ def remove_unnecessary_loads(block):
     return False
 
 
-optimizations = [remove_dead_jumps, remove_unnecessary_loads]
+optimizations = [remove_dead_jumps]
 
 def optimize(code5):
     # first let's strip out comments and data.
-    from codegenerator import is_comment
     data = []
     realcode = []
     for inst5 in code5:
@@ -80,6 +79,8 @@ def optimize(code5):
                 # none of our optimizations optimized; we're done!
                 break
     
+    fix_jumps(cfg)
+    
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
         
@@ -88,12 +89,9 @@ def optimize(code5):
 if __name__ == '__main__':
     from ice9 import compile
     
-    
     source = """
-    var foo : int;
-    foo := 3;
-    if foo > 3 ->
-        write foo;
+    if read > 3 ->
+        write 3;
     fi
     """
     
