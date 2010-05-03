@@ -129,15 +129,13 @@ def remove_arithmetic_identities(ast):
             elif literal.value == 1:
                 node.children = [dynamic]
                 node.become_child()
-        elif node.value in ('%', '/'):
+        elif node.value == '/':
             if right.value == 0:
                 from ice9 import Ice9Error
                 raise Ice9Error(node.line, "Cannot divide by zero!")
-            else:
-                node.children = [literal]
+            elif right.value == 1 or left.value == 0:
+                node.children = [left]
                 node.become_child()
-        
-                
         
 
 def optimize_ast(ast):
