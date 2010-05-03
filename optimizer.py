@@ -83,7 +83,7 @@ def sequential_pops(block):
 
 def remove_dead_jumps(block):
     for i, cfgnode in enumerate(block):
-        if node_equal(cfgnode, (JUMP_PAT, WILD, 0, PC)):
+        if cfgnode.outlink is cfgnode.next and cfgnode.outlink is not None:
             cfgnode.remove()
             del block[i]
             return block

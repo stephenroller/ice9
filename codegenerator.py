@@ -237,8 +237,7 @@ def program(ast):
         procs[procname] = proclocation
         proccode5 += generate_code(procnode)
         
-    if len(proccode5) > 0:
-        code5 += [('JEQ', ZERO, code_length(proccode5), PC, 'skip proc definitions')]
+    code5 += [('JEQ', ZERO, code_length(proccode5), PC, 'skip proc definitions')]
     
     code5 += comment("END PREAMBLE")
     
