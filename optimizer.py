@@ -229,12 +229,32 @@ optimizations = [remove_dead_jumps,
                  remove_unnecessary_loads,
                  ]
 
+def _paint_visited(node):
+    if node is None or hasattr(node, '_painted'):
+        return
+    
+    setattr(node, '_painted', True)
+    if node.outlink is not None:
+        if node.inst not in ('LD', 'LDA', 'LDC'):
+            _paint_visited(node.next)
+        _paint_visited(node.outlink)
+    else:
+        _paint_visited(node.next)
+
+def remove_dead_code(cfg):
+    _paint_visited(cfg)
+    for n in cfg:
+        if not hasattr(n, '_painted'):
+            n.remove()
 
 def optimize(code5):
     data, code5 = reformat_code5(code5)
     
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
+    
+    fix_jumps(cfg)
+    # remove_dead_code(cfg)
     
     # and finally we begin running some optimizations
     for block in yield_blocks(cfg):
@@ -255,7 +275,6 @@ def optimize(code5):
     
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
-        
 
 
 if __name__ == '__main__':

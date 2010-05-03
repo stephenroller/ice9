@@ -150,6 +150,9 @@ def fix_jumps(cfg):
             inst, r, s, t, com = cfgnode.inst5
             if inst in JUMP_INSTS and t == PC:
                 s = cfgnode.outlink.index() - cfgnode.index() - 1
+                if inst == 'JEQ' and r == ZERO:
+                    inst = 'LDA'
+                    r = PC
             elif inst == 'LDA' and r == PC and t == PC:
                 s = cfgnode.outlink.index() - cfgnode.index() - 1
             elif r == PC and (inst == 'LDC' or (inst == 'LDA' and t == ZERO)):
