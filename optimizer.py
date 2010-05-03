@@ -63,7 +63,23 @@ def sequential_pushes(block):
     return False
 
 def sequential_pops(block):
-    matches = match_sequential(block, [])
+    # 160: LD        5, 0(6)        * pop the frame pointer after call
+    # 161: LDA       6, 1(6)        * Move (pop) the stack pointer
+    # 162: LD        4, 0(6)        * remember registers from before proc call
+    # 163: LDA       6, 1(6)        * Move (pop) the stack pointer
+    match = match_sequential(block, [('LD',  "$R1", "$B", SP),
+                                     ('LDA',    SP, "$A", SP),
+                                     ('LD',  "$R2",    0, SP),
+                                     ('LDA',    SP,    1, SP)])
+    if match is False:
+        return False
+    
+    offset, nodes, b = match
+    nodes[1].remove()
+    del block[offset + 1]
+    nodes[2].inst5 = ('LD', b["R2"], b["B"] + 1, SP, nodes[2].comment)
+    nodes[3].inst5 = ('LDA', SP, b["A"] + 1, SP, nodes[3].comment)
+    return block
 
 def remove_dead_jumps(block):
     for i, cfgnode in enumerate(block):
@@ -198,7 +214,8 @@ def reformat_code5(code5):
 
 
 optimizations = [remove_dead_jumps, 
-                 sequential_pushes, 
+                 sequential_pushes,
+                 sequential_pops,
                  times_two,
                  push_pop,
                  invert_sign,
@@ -243,7 +260,7 @@ if __name__ == '__main__':
     source = """
     
     """
-    source = open("test.9").read()
+    source = open("examples/fib.9.txt").read()
     
     print compile(source, False)
     print "-" * 80
