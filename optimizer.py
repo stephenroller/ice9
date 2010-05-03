@@ -4,9 +4,11 @@ from itertools import izip
 from codegenerator import is_comment, code5str
 from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 
+# constants
 WILD = ".*"
 JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
 
+# utility functions
 def inst_equal(inst5, pattern, bindings=None):
     if bindings is None:
         bindings = dict()
@@ -38,48 +40,77 @@ def match_sequential(block, pattern):
 def node_equal(node, pattern, bindings=None):
     return inst_equal(node.inst5, pattern, bindings)
 
+# ----------------------------------------------------------------
+
+# "macro" for optimization. You'll see how it's used.
+def optimization(pattern):
+    assert len(pattern) > 0
+    
+    def _opter(opt):    
+        def mod_opt(block):
+            assert len(block) > 0
+            
+            # find the pattern
+            match = match_sequential(block, pattern)
+            
+            if match is False:
+                # didn't even match the pattern, skip this one
+                return False
+            
+            # we'll use these to rebuild our block
+            first = block[0]
+            end = block[-1].next
+            
+            # match information
+            offset, nodes, bindings = match
+            # we matched the pattern, so let's let run the actual optimization
+            result = opt(nodes, **bindings)
+            
+            if result is False:
+                return
+            
+            # since nodes were likely deleted, we need to rebuild our block
+            # for the main loop
+            newblock = []
+            n = first.prev is not None and first.prev.next or first
+            while n != end:
+                newblock.append(n)
+                n = n.next
+            
+            # return the modified block
+            return newblock
+            
+        return mod_opt
+    return _opter
+
+# begin optimizations --------------------------------
+
 def always_jumps(block):
     matches = match_sequential(block, [('LDC', "$A", 1, WILD), ('JEQ', "$A", WILD, WILD)])
     if matches:
         print matches
     return False
 
-def sequential_pushes(block):
-    matches = match_sequential(block, [('ST', "$R1", "$A", SP),
-                                       ('LDA',   SP, "$A", SP),
-                                       ('ST', "$R2",   -1, SP),
-                                       ('LDA',   SP,   -1, SP)])
-    if matches:
-        offset, nodes, b = matches
-        # nodes[0] remains unchanged
-        nodes[1].remove()
-        nodes[2].inst5 = ('ST', b["R2"], b["A"] - 1, SP, nodes[2].comment)
-        nodes[3].inst5 = ('LDA', SP, b["A"] - 1, SP, nodes[3].comment)
-        
-        del block[offset]
-        
-        return block
-    
-    return False
 
-def sequential_pops(block):
-    # 160: LD        5, 0(6)        * pop the frame pointer after call
-    # 161: LDA       6, 1(6)        * Move (pop) the stack pointer
-    # 162: LD        4, 0(6)        * remember registers from before proc call
-    # 163: LDA       6, 1(6)        * Move (pop) the stack pointer
-    match = match_sequential(block, [('LD',  "$R1", "$B", SP),
-                                     ('LDA',    SP, "$A", SP),
-                                     ('LD',  "$R2",    0, SP),
-                                     ('LDA',    SP,    1, SP)])
-    if match is False:
-        return False
-    
-    offset, nodes, b = match
+@optimization([('ST', "$R1", "$A", SP),
+               ('LDA',   SP, "$A", SP),
+               ('ST', "$R2",   -1, SP),
+               ('LDA',   SP,   -1, SP)])
+def sequential_pushes(nodes, R1, A, R2):
     nodes[1].remove()
-    del block[offset + 1]
-    nodes[2].inst5 = ('LD', b["R2"], b["B"] + 1, SP, nodes[2].comment)
-    nodes[3].inst5 = ('LDA', SP, b["A"] + 1, SP, nodes[3].comment)
-    return block
+    nodes[2].inst5 = ('ST',  R2, A - 1, SP, nodes[2].comment)
+    nodes[3].inst5 = ('LDA', SP, A - 1, SP, nodes[3].comment)
+
+
+@optimization([('LD',  "$R1", "$B", SP),
+               ('LDA',    SP, "$A", SP),
+               ('LD',  "$R2",    0, SP),
+               ('LDA',    SP,    1, SP)])
+def sequential_pops(nodes, R1, B, A, R2):
+    nodes[1].remove()
+    nodes[2].inst5 = ('LD',  R2, B + 1, SP, nodes[2].comment)
+    nodes[3].inst5 = ('LDA', SP, A + 1, SP, nodes[3].comment)
+
 
 def remove_dead_jumps(block):
     for i, cfgnode in enumerate(block):
@@ -89,118 +120,67 @@ def remove_dead_jumps(block):
             return block
     return False
 
-def remove_unnecessary_loads(block):
-    matches = match_sequential(block, [('ST', "$A", "$B", "$C"), 
-                                       ('LD', "$A", "$B", "$C")])
-    if matches:
-        offset, nodes, bindings = matches
-        nodes[1].remove()
-        del block[offset + 1]
-        return block
-        
-    return False
 
-def invert_sign(block):
-    match = match_sequential(block, [('LDC', "$A", -1, WILD),
-                                     ('MUL', "$B", "$B", "$A")])
-    if match:
-        offset, nodes, b = match
-        nodes[0].remove()
-        del block[offset]
-        nodes[1].inst5 = ('SUB', b["B"], ZERO, b["B"], nodes[1].comment)
-        return block
-    
-    return False
+@optimization([('ST', "$A", "$B", "$C"), 
+               ('LD', "$A", "$B", "$C")])
+def remove_unnecessary_loads(nodes, A, B, C):
+    nodes[1].remove()
 
-def times_two(block):
-    # 5: LDC       1, 2(0)      * load constant: 2
-    # 6: LD        2, 0(6)      * Get reg 2 off the stack
-    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
-    # 8: MUL       1, 2, 1      * MUL left and right.
-    match = match_sequential(block, [('LDC', "$A", 2, WILD),
-                                     ('LD',  "$B", 0, SP),
-                                     ('LDA',   SP, 1, SP),
-                                     ('MUL', "$A", "$B", "$A")])
-    if match is False:
-        return False
-        
-    offset, nodes, b = match
+
+@optimization([('LDC', "$A", -1, WILD),
+               ('MUL', "$B", "$B", "$A")])
+def invert_sign(nodes, A, B):
     nodes[0].remove()
-    nodes[1].inst5 = ('LD', b["A"], 0, SP, 'get A off of stack')
-    nodes[3].inst5 = ('ADD', b["A"], b["A"], b["A"], 'A * 2')
-    del block[offset]
-    return block
+    nodes[1].inst5 = ('SUB', B, ZERO, B, nodes[1].comment)
 
-def addsub_constant(block):
-    # 3: ST        1,-1(6)      * Store reg 1 on the stack
-    # 4: LDA       6,-1(6)      * Move (push) the stack pointer
-    # 5: LDC       1,-2(0)      * load constant: -2
-    # 6: LD        2, 0(6)      * Get reg 2 off the stack
-    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
-    # 8: ADD       1, 2, 1      * ADD left and right.
-    match = match_sequential(block, [('ST',  "$R1",    -1, SP),
-                                     ('LDA',    SP,    -1, SP),
-                                     ('LDC', "$R1",  "$C", WILD),
-                                     ('LD',  "$R2",     0, SP),
-                                     ('LDA',    SP,     1, SP),
-                                     ('(ADD|SUB)', "$R1", "$R2", "$R1")])
-    if match is False:
-        return False
-    
-    offset, nodes, b = match
+
+@optimization([('LDC', "$A",    2, WILD),
+               ('LD',  "$B",    0, SP),
+               ('LDA',   SP,    1, SP),
+               ('MUL', "$A", "$B", "$A")])
+def times_two(nodes, A, B):
+    nodes[0].remove()
+    nodes[1].inst5 = ('LD', A, 0, SP, 'get A off of stack')
+    nodes[3].inst5 = ('ADD', A, A, A, 'A * 2')
+
+
+@optimization([('ST',  "$R1",    -1, SP),
+               ('LDA',    SP,    -1, SP),
+               ('LDC', "$R1",  "$C", WILD),
+               ('LD',  "$R2",     0, SP),
+               ('LDA',    SP,     1, SP),
+               ('(ADD|SUB)', "$R1", "$R2", "$R1")])
+def addsub_constant(nodes, R1, R2, C):
     if nodes[5].inst == 'ADD':
-        nodes[0].inst5 = ('LDA', b["R1"], b["C"], b["R1"], "Add %d" % b["C"])
+        nodes[0].inst5 = ('LDA', R1, C, R1, "Add %d" % C)
     else:
-        nodes[0].inst5 = ('LDA', b["R1"], - b["C"], b["R1"], "Subtract %d" % b["C"])
+        nodes[0].inst5 = ('LDA', R1, -C, R1, "Subtract %d" % C)
     
     for n in nodes[1:]:
         n.remove()
-    del block[offset+1:offset+len(nodes)-1]
-    return block
 
-def muldiv_constant(block):
-    # 3: ST        1,-1(6)      * Store reg 1 on the stack
-    # 4: LDA       6,-1(6)      * Move (push) the stack pointer
-    # 5: LDC       1,-2(0)      * load constant: -2
-    # 6: LD        2, 0(6)      * Get reg 2 off the stack
-    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
-    # 8: MUL       1, 2, 1      * ADD left and right.
-    match = match_sequential(block, [('ST',  "$R1",    -1, SP),
-                                     ('LDA',    SP,    -1, SP),
-                                     ('LDC', "$R1",  "$C", WILD),
-                                     ('LD',  "$R2",     0, SP),
-                                     ('LDA',    SP,     1, SP),
-                                     ('(MUL|DIV)', "$R1", "$R2", "$R1")])
-    if match is False:
-        return False
 
-    offset, nodes, b = match
-    nodes[0].remove()
-    nodes[1].remove()
-    nodes[2].remove()
-    nodes[3].remove()
-    nodes[4].inst5 = ('LDC', b["R2"], b["C"], ZERO, 'Prepare multiply by %d' % b["C"])
-    nodes[5].inst5 = (nodes[5].inst, b["R1"], b["R1"], b["R2"], nodes[5].comment)
-    del block[offset:offset + 3]
-    return block
+@optimization([('ST',  "$R1",    -1, SP),
+               ('LDA',    SP,    -1, SP),
+               ('LDC', "$R1",  "$C", WILD),
+               ('LD',  "$R2",     0, SP),
+               ('LDA',    SP,     1, SP),
+               ('(MUL|DIV)', "$R1", "$R2", "$R1")])
+def muldiv_constant(nodes, R1, R2, C):
+    for i in (0, 1, 2, 3):
+        nodes[i].remove()
+    nodes[4].inst5 = ('LDC', R2, C, ZERO, 'Prepare multiply by %d' % C)
+    nodes[5].inst5 = (nodes[5].inst, R1, R1, R2, nodes[5].comment)
 
-def push_pop(block):
-    # 2: ST        1,-1(6)      * saving the set value to the stack
-    # 3: LDA       6,-1(6)      * Move (push) the stack pointer
-    # 4: LD        1, 0(6)      * getting the set value off the stack
-    # 5: LDA       6, 1(6)      * Move (pop) the stack pointer
-    match = match_sequential(block, [('ST', "$A", -1, SP),
-                                     ('LDA', SP, -1, SP),
-                                     ('LD', "$A", 0, SP),
-                                     ('LDA', SP, 1, SP)])
-    if match:
-        offset, nodes, b = match
-        for n in nodes:
-            n.remove()
-        del block[offset:offset+len(nodes)]
-        return block
-    
-    return False
+
+@optimization([('ST', "$A", -1, SP),
+               ('LDA',  SP, -1, SP),
+               ('LD', "$A",  0, SP),
+               ('LDA',  SP,  1, SP)])
+def push_pop(nodes, A):
+    for n in nodes:
+        n.remove()
+
 
 def jump_based_on_boolean(block):
     # 3: JGT       1, 2(7)      * skip set to false
@@ -235,7 +215,7 @@ def jump_based_on_boolean(block):
         n.remove()
     del block[offset:offset + 4]
     return block
-    
+
 
 def reformat_code5(code5):
     # first let's strip out comments and data.
@@ -283,6 +263,9 @@ def remove_dead_code(cfg):
         if not hasattr(n, '_painted'):
             n.remove()
 
+# end optimizations ------------------------------------------------
+
+# main driver
 def optimize(code5):
     data, code5 = reformat_code5(code5)
     
@@ -319,7 +302,8 @@ if __name__ == '__main__':
     source = """
     
     """
-    source = open("examples/fib.9.txt").read()
+    # source = open("examples/fib.9.txt").read()
+    source = open('test.9').read()
     
     print compile(source, False)
     print "-" * 80
