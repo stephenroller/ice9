@@ -202,6 +202,33 @@ def push_pop(block):
     
     return False
 
+def jump_based_on_boolean(block):
+    # 3: JGT       1, 2(7)      * skip set to false
+    # 4: LDC       1, 0(0)      * comparison is bad, set reg 1 to false
+    # 5: LDA       7, 1(7)      * skip set to true
+    # 6: LDC       1, 1(0)      * compairson is good, set reg 1 to true
+    # 7: JEQ       1, 0(7)      * if false, jump to next cond
+    match = match_sequential(block, [(JUMP_PAT, "$R1",   2, PC),
+                                     ('LDC',    "$R1",   0, WILD),
+                                     ('LDA',      PC,    1, PC),
+                                     ('LDC',    "$R1",   1, WILD),
+                                     ('JEQ',    "$R1", "$A", "$B")
+                                     ])
+    if match is False:
+        return False
+    
+    offset, nodes, b = match
+    
+    inverseinsts = dict(JEQ='JNE', JNE='JEQ', JLT='JGE', JGT='JLE', 
+                        JLE='JGT', JGE='JLT')
+    inverseinst = inverseinsts[nodes[0].inst]
+    nodes[-1].inst5 = (inverseinst, b["R1"], b["A"], b["B"], nodes[-1].comment)
+    for n in nodes[:-1]:
+        n.remove()
+    del block[offset:offset + 4]
+    return block
+    
+
 def reformat_code5(code5):
     # first let's strip out comments and data.
     data = []
@@ -256,6 +283,8 @@ def optimize(code5):
     fix_jumps(cfg)
     # remove_dead_code(cfg)
     
+    jump_based_on_boolean(list(iter(cfg)))
+    
     # and finally we begin running some optimizations
     for block in yield_blocks(cfg):
         while True:
@@ -272,6 +301,7 @@ def optimize(code5):
                 break
     
     fix_jumps(cfg)
+    # remove_dead_jumps(list(iter(cfg)))
     
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
