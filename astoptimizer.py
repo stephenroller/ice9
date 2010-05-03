@@ -98,8 +98,6 @@ def cond_elimination(ast):
         if len(children) == 1:
             # we have an else
             node.become_child()
-        
-    
     return False
 
 def remove_arithmetic_identities(ast):

@@ -115,6 +115,54 @@ def times_two(block):
     del block[offset]
     return block
 
+def add_constant(block):
+    # 3: ST        1,-1(6)      * Store reg 1 on the stack
+    # 4: LDA       6,-1(6)      * Move (push) the stack pointer
+    # 5: LDC       1,-2(0)      * load constant: -2
+    # 6: LD        2, 0(6)      * Get reg 2 off the stack
+    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
+    # 8: ADD       1, 2, 1      * ADD left and right.
+    match = match_sequential(block, [('ST',  "$R1",    -1, SP),
+                                     ('LDA',    SP,    -1, SP),
+                                     ('LDC', "$R1",  "$C", WILD),
+                                     ('LD',  "$R2",     0, SP),
+                                     ('LDA',    SP,     1, SP),
+                                     ('ADD', "$R1", "$R2", "$R1")])
+    if match is False:
+        return False
+    
+    offset, nodes, b = match
+    nodes[0].inst5 = ('LDA', b["R1"], b["C"], b["R1"], "Add %d" % b["C"])
+    for n in nodes[1:]:
+        n.remove()
+    del block[offset+1:offset+len(nodes)-1]
+    return block
+
+def mul_constant(block):
+    # 3: ST        1,-1(6)      * Store reg 1 on the stack
+    # 4: LDA       6,-1(6)      * Move (push) the stack pointer
+    # 5: LDC       1,-2(0)      * load constant: -2
+    # 6: LD        2, 0(6)      * Get reg 2 off the stack
+    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
+    # 8: MUL       1, 2, 1      * ADD left and right.
+    match = match_sequential(block, [('ST',  "$R1",    -1, SP),
+                                     ('LDA',    SP,    -1, SP),
+                                     ('LDC', "$R1",  "$C", WILD),
+                                     ('LD',  "$R2",     0, SP),
+                                     ('LDA',    SP,     1, SP),
+                                     ('MUL', "$R1", "$R2", "$R1")])
+    if match is False:
+        return False
+
+    offset, nodes, b = match
+    nodes[0].remove()
+    nodes[1].remove()
+    nodes[2].remove()
+    nodes[3].remove()
+    nodes[4].inst5 = ('LDC', b["R2"], b["C"], ZERO, 'Prepare multiply by %d' % b["C"])
+    del block[offset:offset + 3]
+    return block
+
 def push_pop(block):
     # 2: ST        1,-1(6)      * saving the set value to the stack
     # 3: LDA       6,-1(6)      * Move (push) the stack pointer
@@ -154,6 +202,8 @@ optimizations = [remove_dead_jumps,
                  times_two,
                  push_pop,
                  invert_sign,
+                 add_constant,
+                 mul_constant,
                  remove_unnecessary_loads,
                  ]
 
