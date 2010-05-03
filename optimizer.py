@@ -1,7 +1,8 @@
 import re
 from cfg import construct_CFG, yield_blocks, fix_jumps
 from itertools import izip
-from codegenerator import is_comment, ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
+from codegenerator import is_comment, code5str
+from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 
 WILD = ".*"
 JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
@@ -78,7 +79,8 @@ def remove_unnecessary_loads(block):
     if matches:
         offset, nodes, bindings = matches
         nodes[1].remove()
-        return nodes[:1]
+        del block[offset + 1]
+        return block
         
     return False
 
@@ -93,6 +95,25 @@ def invert_sign(block):
         return block
     
     return False
+
+def times_two(block):
+    # 5: LDC       1, 2(0)      * load constant: 2
+    # 6: LD        2, 0(6)      * Get reg 2 off the stack
+    # 7: LDA       6, 1(6)      * Move (pop) the stack pointer
+    # 8: MUL       1, 2, 1      * MUL left and right.
+    match = match_sequential(block, [('LDC', "$A", 2, WILD),
+                                     ('LD',  "$B", 0, SP),
+                                     ('LDA',   SP, 1, SP),
+                                     ('MUL', "$A", "$B", "$A")])
+    if match is False:
+        return False
+        
+    offset, nodes, b = match
+    nodes[0].remove()
+    nodes[1].inst5 = ('LD', b["A"], 0, SP, 'get A off of stack')
+    nodes[3].inst5 = ('ADD', b["A"], b["A"], b["A"], 'A * 2')
+    del block[offset]
+    return block
 
 def push_pop(block):
     # 2: ST        1,-1(6)      * saving the set value to the stack
@@ -130,9 +151,11 @@ def reformat_code5(code5):
 
 optimizations = [remove_dead_jumps, 
                  sequential_pushes, 
+                 times_two,
                  push_pop,
+                 invert_sign,
                  remove_unnecessary_loads,
-                 invert_sign]
+                 ]
 
 
 def optimize(code5):
@@ -146,10 +169,11 @@ def optimize(code5):
         while True:
             optimized = False
             for opt in optimizations:
-                result = optimized or opt(block)
-                if not optimized and result is not False:
+                result = opt(block)
+                if result is not False:
                     block = result
                     optimized = True
+                    break
             
             if not optimized:
                 # none of our optimizations optimized; we're done!

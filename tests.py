@@ -382,6 +382,14 @@ af
 """, 
 "0 1 0 2 0 3")
 
+test_times_2 = make_compile_test("""
+var a : int;
+a := 3;
+a := a * 2;
+writes a;
+""",
+"6")
+
 # for i in xrange(1, 258):
 #     globals()["community_test%d" % i] = make_community_test(i)
 

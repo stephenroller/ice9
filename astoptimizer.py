@@ -122,6 +122,9 @@ def remove_arithmetic_identities(ast):
                 node.become_child()
             elif node.value == '-' and left.value == 0:
                 node.children = [dynamic]
+            elif node.value == '+':
+                # reorder for easy peephole optimization later
+                node.children [dynamic, literal]
         elif node.value == '*':
             if literal.value == 0:
                 node.children = [literal]
@@ -132,6 +135,9 @@ def remove_arithmetic_identities(ast):
             elif literal.value == -1:
                 node.children = [dynamic]
                 node.value = '-'
+            else:
+                # reorder for easy peephole optimization later
+                node.children = [dynamic, literal]
         elif node.value == '/':
             if right.value == 0:
                 from ice9 import Ice9Error
