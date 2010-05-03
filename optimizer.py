@@ -8,7 +8,24 @@ from codegenerator import ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 WILD = ".*"
 JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
 
-# utility functions
+# utility functions ----------------------------------------------
+
+def reformat_code5(code5):
+    # first let's strip out comments and data.
+    data = []
+    realcode = []
+    for inst5 in code5:
+        if is_comment(inst5):
+            if inst5[0] == 'comment':
+                continue
+            # not a "comment", but a data statement. We'll put all those in
+            # front later
+            data.append(inst5)
+        else:
+            realcode.append(inst5)
+    return data, realcode
+
+
 def inst_equal(inst5, pattern, bindings=None):
     if bindings is None:
         bindings = dict()
@@ -85,13 +102,7 @@ def optimization(pattern):
 
 # begin optimizations --------------------------------
 
-def always_jumps(block):
-    matches = match_sequential(block, [('LDC', "$A", 1, WILD), ('JEQ', "$A", WILD, WILD)])
-    if matches:
-        print matches
-    return False
-
-
+# local optimizations
 @optimization([('ST', "$R1", "$A", SP),
                ('LDA',   SP, "$A", SP),
                ('ST', "$R2",   -1, SP),
@@ -110,15 +121,6 @@ def sequential_pops(nodes, R1, B, A, R2):
     nodes[1].remove()
     nodes[2].inst5 = ('LD',  R2, B + 1, SP, nodes[2].comment)
     nodes[3].inst5 = ('LDA', SP, A + 1, SP, nodes[3].comment)
-
-
-def remove_dead_jumps(block):
-    for i, cfgnode in enumerate(block):
-        if cfgnode.outlink is cfgnode.next and cfgnode.outlink is not None:
-            cfgnode.remove()
-            del block[i]
-            return block
-    return False
 
 
 @optimization([('ST', "$A", "$B", "$C"), 
@@ -182,60 +184,7 @@ def push_pop(nodes, A):
         n.remove()
 
 
-def jump_based_on_boolean(block):
-    # 3: JGT       1, 2(7)      * skip set to false
-    # 4: LDC       1, 0(0)      * comparison is bad, set reg 1 to false
-    # 5: LDA       7, 1(7)      * skip set to true
-    # 6: LDC       1, 1(0)      * compairson is good, set reg 1 to true
-    # 7: JEQ       1, 0(7)      * if false, jump to next cond
-    
-    n = block[0]
-    while n.prev != None:
-        n = n.prev
-    block = list(iter(n))
-    
-    match = match_sequential(block, [(JUMP_PAT, "$R1",   2, PC),
-                                     ('LDC',    "$R1",   0, WILD),
-                                     ('LDA',      PC,    1, PC),
-                                     ('LDC',    "$R1",   1, WILD),
-                                     ('(JEQ|JNE)', "$R1", "$A", "$B")
-                                     ])
-    if match is False:
-        return False
-    
-    offset, nodes, b = match
-    if nodes[-1].inst == 'JEQ':
-        inverseinsts = dict(JEQ='JNE', JNE='JEQ', JLT='JGE', JGT='JLE', 
-                            JLE='JGT', JGE='JLT')
-        inverseinst = inverseinsts[nodes[0].inst]
-        nodes[-1].inst5 = (inverseinst, b["R1"], b["A"], b["B"], nodes[-1].comment)
-    else:
-        nodes[-1].inst5 = (nodes[-1].inst, b["R1"], b["A"], b["B"], nodes[-1].comment)
-    for n in nodes[:-1]:
-        n.remove()
-    del block[offset:offset + 4]
-    return block
-
-
-def reformat_code5(code5):
-    # first let's strip out comments and data.
-    data = []
-    realcode = []
-    for inst5 in code5:
-        if is_comment(inst5):
-            if inst5[0] == 'comment':
-                continue
-            # not a "comment", but a data statement. We'll put all those in
-            # front later
-            data.append(inst5)
-        else:
-            realcode.append(inst5)
-    return data, realcode
-
-
-optimizations = [remove_dead_jumps, 
-                 jump_based_on_boolean,
-                 sequential_pushes,
+optimizations = [sequential_pushes,
                  sequential_pops,
                  times_two,
                  push_pop,
@@ -244,6 +193,8 @@ optimizations = [remove_dead_jumps,
                  muldiv_constant,
                  remove_unnecessary_loads,
                  ]
+
+# global optimizations ---------------------------------------------------
 
 def _paint_visited(node):
     if node is None or hasattr(node, '_painted'):
@@ -263,6 +214,49 @@ def remove_dead_code(cfg):
         if not hasattr(n, '_painted'):
             n.remove()
 
+
+def remove_dead_jumps(cfg):
+    for cfgnode in cfg:
+        if cfgnode.outlink is cfgnode.next and cfgnode.outlink is not None:
+            cfgnode.remove()
+
+
+def jump_based_on_boolean(cfg):
+    # 3: JGT       1, 2(7)      * skip set to false
+    # 4: LDC       1, 0(0)      * comparison is bad, set reg 1 to false
+    # 5: LDA       7, 1(7)      * skip set to true
+    # 6: LDC       1, 1(0)      * compairson is good, set reg 1 to true
+    # 7: JEQ       1, 0(7)      * if false, jump to next cond
+
+    block = list(cfg)    
+    match = match_sequential(block, [(JUMP_PAT, "$R1",   2, PC),
+                                     ('LDC',    "$R1",   0, WILD),
+                                     ('LDA',      PC,    1, PC),
+                                     ('LDC',    "$R1",   1, WILD),
+                                     ('(JEQ|JNE)', "$R1", "$A", "$B")
+                                     ])
+    if match is False:
+        return False
+
+    offset, nodes, b = match
+    if nodes[-1].inst == 'JEQ':
+        inverseinsts = dict(JEQ='JNE', JNE='JEQ', JLT='JGE', JGT='JLE', 
+                            JLE='JGT', JGE='JLT')
+        inverseinst = inverseinsts[nodes[0].inst]
+        nodes[-1].inst5 = (inverseinst, b["R1"], b["A"], b["B"], nodes[-1].comment)
+    else:
+        nodes[-1].inst5 = (nodes[-1].inst, b["R1"], b["A"], b["B"], nodes[-1].comment)
+    for n in nodes[:-1]:
+        n.remove()
+    del block[offset:offset + 4]
+    return block
+
+
+global_optimizations = [remove_dead_code, 
+                        remove_dead_jumps, 
+                        jump_based_on_boolean,
+                        ]
+
 # end optimizations ------------------------------------------------
 
 # main driver
@@ -272,7 +266,9 @@ def optimize(code5):
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
     
-    remove_dead_code(cfg)
+    for opt in global_optimizations:
+        opt(cfg)
+        fix_jumps(cfg)
     
     # and finally we begin running some optimizations
     for block in yield_blocks(cfg):
