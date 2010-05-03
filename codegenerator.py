@@ -109,8 +109,8 @@ def push_register(reg, comment=None):
     """Creates code for pushing a register onto the stack."""
     if not comment:
         comment = 'Store reg %s on the stack' % reg
-    return [('LDA', SP, -1, SP, 'Move (push) the stack pointer'),
-            ('ST', reg, 0, SP, comment)]
+    return [('ST', reg, -1, SP, comment),
+            ('LDA', SP, -1, SP, 'Move (push) the stack pointer')]
 
 def pop_register(reg, comment=None):
     """Creates code for popping a register off the stack."""

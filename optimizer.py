@@ -44,15 +44,32 @@ def always_jumps(block):
     return False
 
 def sequential_pushes(block):
-    # matches = match_sequential(block, [('LD')])
+    matches = match_sequential(block, [('ST', "$R1", "$A", SP),
+                                       ('LDA',   SP, "$A", SP),
+                                       ('ST', "$R2",   -1, SP),
+                                       ('LDA',   SP,   -1, SP)])
+    if matches:
+        offset, nodes, b = matches
+        # nodes[0] remains unchanged
+        nodes[1].remove()
+        nodes[2].inst5 = ('ST', b["R2"], b["A"] - 1, SP, nodes[2].comment)
+        nodes[3].inst5 = ('LDA', SP, b["A"] - 1, SP, nodes[3].comment)
+        
+        del block[offset]
+        
+        return block
+    
     return False
+
+def sequential_pops(block):
+    matches = match_sequential(block, [])
 
 def remove_dead_jumps(block):
     for i, cfgnode in enumerate(block):
         if node_equal(cfgnode, (JUMP_PAT, WILD, 0, PC)):
             cfgnode.remove()
             del block[i]
-            return True
+            return block
     return False
 
 def remove_unnecessary_loads(block):
@@ -60,10 +77,10 @@ def remove_unnecessary_loads(block):
                                        ('LD', "$A", "$B", "$C")])
     if matches:
         offset, nodes, bindings = matches
-        block[offset].remove()
+        nodes[1].remove()
+        return nodes[:1]
         
     return False
-
 
 def reformat_code5(code5):
     # first let's strip out comments and data.
@@ -94,7 +111,10 @@ def optimize(code5):
         while True:
             optimized = False
             for opt in optimizations:
-                optimized = optimized or opt(block)
+                result = optimized or opt(block)
+                if not optimized and result is not False:
+                    block = result
+                    optimized = True
             
             if not optimized:
                 # none of our optimizations optimized; we're done!
@@ -120,5 +140,3 @@ if __name__ == '__main__':
     print "-" * 80
     print
     print compile(source, True)
-    
-    test_fa6().runTest()

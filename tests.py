@@ -370,8 +370,20 @@ write test;
 """,
 "this is a test\n")
 
-for i in xrange(1, 258):
-    globals()["community_test%d" % i] = make_community_test(i)
+test_multi_push = make_compile_test("""
+proc foo ()
+	writes 0;
+end
+
+fa i := 1 to 3 ->
+    foo (); 
+    writes i;
+af
+""", 
+"0 1 0 2 0 3")
+
+# for i in xrange(1, 258):
+#     globals()["community_test%d" % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()
