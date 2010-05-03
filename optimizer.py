@@ -82,6 +82,18 @@ def remove_unnecessary_loads(block):
         
     return False
 
+def invert_sign(block):
+    match = match_sequential(block, [('LDC', "$A", -1, WILD),
+                                     ('MUL', "$B", "$B", "$A")])
+    if match:
+        offset, nodes, b = match
+        nodes[0].remove()
+        del block[offset]
+        nodes[1].inst5 = ('SUB', b["B"], ZERO, b["B"], nodes[1].comment)
+        return block
+    
+    return False
+
 def reformat_code5(code5):
     # first let's strip out comments and data.
     data = []
@@ -97,7 +109,11 @@ def reformat_code5(code5):
             realcode.append(inst5)
     return data, realcode
 
-optimizations = [remove_dead_jumps, sequential_pushes, remove_unnecessary_loads]
+
+optimizations = [remove_dead_jumps, 
+                 sequential_pushes, 
+                 remove_unnecessary_loads,
+                 invert_sign]
 
 
 def optimize(code5):
