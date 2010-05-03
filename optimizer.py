@@ -208,21 +208,29 @@ def jump_based_on_boolean(block):
     # 5: LDA       7, 1(7)      * skip set to true
     # 6: LDC       1, 1(0)      * compairson is good, set reg 1 to true
     # 7: JEQ       1, 0(7)      * if false, jump to next cond
+    
+    n = block[0]
+    while n.prev != None:
+        n = n.prev
+    block = list(iter(n))
+    
     match = match_sequential(block, [(JUMP_PAT, "$R1",   2, PC),
                                      ('LDC',    "$R1",   0, WILD),
                                      ('LDA',      PC,    1, PC),
                                      ('LDC',    "$R1",   1, WILD),
-                                     ('JEQ',    "$R1", "$A", "$B")
+                                     ('(JEQ|JNE)', "$R1", "$A", "$B")
                                      ])
     if match is False:
         return False
     
     offset, nodes, b = match
-    
-    inverseinsts = dict(JEQ='JNE', JNE='JEQ', JLT='JGE', JGT='JLE', 
-                        JLE='JGT', JGE='JLT')
-    inverseinst = inverseinsts[nodes[0].inst]
-    nodes[-1].inst5 = (inverseinst, b["R1"], b["A"], b["B"], nodes[-1].comment)
+    if nodes[-1].inst == 'JEQ':
+        inverseinsts = dict(JEQ='JNE', JNE='JEQ', JLT='JGE', JGT='JLE', 
+                            JLE='JGT', JGE='JLT')
+        inverseinst = inverseinsts[nodes[0].inst]
+        nodes[-1].inst5 = (inverseinst, b["R1"], b["A"], b["B"], nodes[-1].comment)
+    else:
+        nodes[-1].inst5 = (nodes[-1].inst, b["R1"], b["A"], b["B"], nodes[-1].comment)
     for n in nodes[:-1]:
         n.remove()
     del block[offset:offset + 4]
@@ -246,6 +254,7 @@ def reformat_code5(code5):
 
 
 optimizations = [remove_dead_jumps, 
+                 jump_based_on_boolean,
                  sequential_pushes,
                  sequential_pops,
                  times_two,
@@ -280,10 +289,7 @@ def optimize(code5):
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
     
-    fix_jumps(cfg)
     remove_dead_code(cfg)
-    
-    jump_based_on_boolean(list(iter(cfg)))
     
     # and finally we begin running some optimizations
     for block in yield_blocks(cfg):
@@ -294,13 +300,13 @@ def optimize(code5):
                 if result is not False:
                     block = result
                     optimized = True
+                    fix_jumps(cfg)
                     break
             
             if not optimized:
                 # none of our optimizations optimized; we're done!
                 break
-    
-    fix_jumps(cfg)
+
     
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
@@ -313,7 +319,7 @@ if __name__ == '__main__':
     source = """
     
     """
-    source = open("test.9").read()
+    source = open("examples/fib.9.txt").read()
     
     print compile(source, False)
     print "-" * 80
