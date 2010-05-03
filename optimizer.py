@@ -94,6 +94,24 @@ def invert_sign(block):
     
     return False
 
+def push_pop(block):
+    # 2: ST        1,-1(6)      * saving the set value to the stack
+    # 3: LDA       6,-1(6)      * Move (push) the stack pointer
+    # 4: LD        1, 0(6)      * getting the set value off the stack
+    # 5: LDA       6, 1(6)      * Move (pop) the stack pointer
+    match = match_sequential(block, [('ST', "$A", -1, SP),
+                                     ('LDA', SP, -1, SP),
+                                     ('LD', "$A", 0, SP),
+                                     ('LDA', SP, 1, SP)])
+    if match:
+        offset, nodes, b = match
+        for n in nodes:
+            n.remove()
+        del block[offset:offset+len(nodes)]
+        return block
+    
+    return False
+
 def reformat_code5(code5):
     # first let's strip out comments and data.
     data = []
@@ -112,6 +130,7 @@ def reformat_code5(code5):
 
 optimizations = [remove_dead_jumps, 
                  sequential_pushes, 
+                 push_pop,
                  remove_unnecessary_loads,
                  invert_sign]
 
