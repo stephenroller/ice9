@@ -262,7 +262,7 @@ def _paint_visited(node):
     
     setattr(node, '_painted', True)
     if node.outlink is not None:
-        if node.inst not in ('LD', 'LDA', 'LDC'):
+        if node.inst not in ('LD', 'LDA'):
             _paint_visited(node.next)
         _paint_visited(node.outlink)
     else:
@@ -281,7 +281,7 @@ def optimize(code5):
     cfg = construct_CFG(code5)
     
     fix_jumps(cfg)
-    # remove_dead_code(cfg)
+    remove_dead_code(cfg)
     
     jump_based_on_boolean(list(iter(cfg)))
     
@@ -301,7 +301,6 @@ def optimize(code5):
                 break
     
     fix_jumps(cfg)
-    # remove_dead_jumps(list(iter(cfg)))
     
     optimizedcode = [n.inst5 for n in cfg]
     return data + optimizedcode
