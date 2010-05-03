@@ -6,23 +6,46 @@ from codegenerator import is_comment, ZERO, AC1, AC2, AC3, AC4, SP, FP, PC
 WILD = ".*"
 JUMP_PAT = r'J(EQ|NE|LT|LE|GT|GE)'
 
-def inst_equal(inst5, pattern):
+def inst_equal(inst5, pattern, bindings=None):
+    if bindings is None:
+        bindings = dict()
+    
     assert len(pattern) == 4
     assert len(inst5) == 5
     for p, i in izip(pattern, inst5):
-        if not (p == WILD or p == i or re.match("^%s$" % p, str(i))):
+        if type(p) is str and p.startswith("$"):
+            # variable!
+            varname = p[1:]
+            if varname not in bindings:
+                bindings[varname] = i
+            elif bindings[varname] != i:
+                return False
+        elif not (p == WILD or p == i or re.match("^%s$" % p, str(i))):
             return False
     return True
 
-# def match_sequential(block, pattern):
-#     for i in range(0, len(block) - len(pattern)):
-#         window = block[i:]
-#         matches = all(node_equal(c, p) for c, p in izip(window, pattern))
-#         return window
-#     return False
+def match_sequential(block, pattern):
+    for i in range(0, len(block) - len(pattern)):
+        window = block[i:i + len(pattern)]
+        b = {}
+        matches = all(node_equal(c, p, b) for c, p in izip(window, pattern))
+        if matches:
+            return i, window, b
+        
+    return False
 
-def node_equal(node, pattern):
-    return inst_equal(node.inst5, pattern)
+def node_equal(node, pattern, bindings=None):
+    return inst_equal(node.inst5, pattern, bindings)
+
+def always_jumps(block):
+    matches = match_sequential(block, [('LDC', "$A", 1, WILD), ('JEQ', "$A", WILD, WILD)])
+    if matches:
+        print matches
+    return False
+
+def sequential_pushes(block):
+    # matches = match_sequential(block, [('LD')])
+    return False
 
 def remove_dead_jumps(block):
     for i, cfgnode in enumerate(block):
@@ -33,22 +56,14 @@ def remove_dead_jumps(block):
     return False
 
 def remove_unnecessary_loads(block):
-    i = 0
-    for a, b in izip(block, block[1:]):
-        insta, ra, sa, ta, coma = a.inst5
-        instb, rb, sb, tb, comb = b.inst5
+    matches = match_sequential(block, [('ST', "$A", "$B", "$C"), 
+                                       ('LD', "$A", "$B", "$C")])
+    if matches:
+        offset, nodes, bindings = matches
+        block[offset].remove()
         
-        if (insta == 'ST' and instb == 'LD' and ra == rb and 
-            sa == sb and ta == tb):
-                b.remove()
-                del block[i + 1]
-                return True
-        
-        i += 1
     return False
 
-
-optimizations = [remove_dead_jumps]
 
 def reformat_code5(code5):
     # first let's strip out comments and data.
@@ -64,6 +79,9 @@ def reformat_code5(code5):
         else:
             realcode.append(inst5)
     return data, realcode
+
+optimizations = [remove_dead_jumps, sequential_pushes, remove_unnecessary_loads]
+
 
 def optimize(code5):
     data, code5 = reformat_code5(code5)
@@ -93,16 +111,10 @@ if __name__ == '__main__':
     from ice9 import compile
     from tests import *
     
-    source = """var a : int[3]
-fa i := 1 to 3 ->
-    a[i - 1] := i - 1;
-af
-fa i := 1 to 3 ->
-    writes a[i - 1];
-af
-"""
+    source = """
     
-    test_fa6 = make_compile_test(source, "0 1 2")
+    """
+    source = open("test.9").read()
     
     print compile(source, False)
     print "-" * 80
