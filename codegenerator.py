@@ -490,21 +490,21 @@ def for_loop(fornode):
             p = p.parent
         # p contains the last for loop
         outer_fa_varname = p.children[0].value
-        pmemloc = activation_record_size[0] + 1
+        pmemloc = activation_record_size[0]
         activation_record_size[0] += 1
         
         if len(activation_record_size) == 1: 
             # global fa loop's go with global variables
-            variables[0][outer_fa_varname] = (pmemloc, ZERO)
+            outervar = (pmemloc, ZERO)
             code5 += [('data', 0, 0, 0, '%s initialization' % outer_fa_varname),
                       ('ST', AC3, pmemloc, ZERO, 'storing fa variable %s in heap' % outer_fa_varname)]
         else:
             # proc fa loops go in the activation_record
             code5 += comment('NESTED FA IN PROC, STORE LAST FA VAR ON THE STACK')
             code5 += push_register(AC3, 'storing last for loop variable')
-            pmemloc = -pmemloc
+            outervar = (pmemloc - 1, FP)
         
-            variables[0][outer_fa_varname] = (pmemloc, FP)
+        variables[0][outer_fa_varname] = outervar
     
     var, lower, upper, body = fornode.children
     varname = var.value
@@ -545,7 +545,8 @@ def for_loop(fornode):
     if fornode.loopcount > 1:
         if len(activation_record_size) == 1:
             # get the global var back off the heap
-            code5 += [('LD', AC3, pmemloc, FP, 'restore old loop var off heap')]
+            pmemloc, relreg = outervar
+            code5 += [('LD', AC3, pmemloc, relreg, 'restore old loop var off heap')]
         else:
             # get it off the stack
             code5 += pop_register(AC3, "restore old for loop variable")
