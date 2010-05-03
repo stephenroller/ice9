@@ -49,6 +49,10 @@ class CFGNode:
         return n
     
     @property
+    def inst(self):
+        return self.inst5[0]
+    
+    @property
     def comment(self):
         return self.inst5[4]
     

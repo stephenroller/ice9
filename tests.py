@@ -406,6 +406,24 @@ writes a;
 """,
 "1")
 
+test_sub_const = make_compile_test(
+    "if read > 3 -> write 5; fi",
+    "Enter integer value: 5",
+    "4\n"
+)
+
+test_sub_const2 = make_compile_test(
+    "if read > 3 -> write 5; fi",
+    "Enter integer value: ",
+    "3\n"
+)
+
+test_div_const = make_compile_test(
+    "var a : int; a := 5; write a / 4;",
+    "1"
+)
+
+
 # for i in xrange(1, 258):
 #     globals()["community_test%d" % i] = make_community_test(i)
 

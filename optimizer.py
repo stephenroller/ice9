@@ -131,7 +131,7 @@ def times_two(block):
     del block[offset]
     return block
 
-def add_constant(block):
+def addsub_constant(block):
     # 3: ST        1,-1(6)      * Store reg 1 on the stack
     # 4: LDA       6,-1(6)      * Move (push) the stack pointer
     # 5: LDC       1,-2(0)      * load constant: -2
@@ -143,18 +143,22 @@ def add_constant(block):
                                      ('LDC', "$R1",  "$C", WILD),
                                      ('LD',  "$R2",     0, SP),
                                      ('LDA',    SP,     1, SP),
-                                     ('ADD', "$R1", "$R2", "$R1")])
+                                     ('(ADD|SUB)', "$R1", "$R2", "$R1")])
     if match is False:
         return False
     
     offset, nodes, b = match
-    nodes[0].inst5 = ('LDA', b["R1"], b["C"], b["R1"], "Add %d" % b["C"])
+    if nodes[5].inst == 'ADD':
+        nodes[0].inst5 = ('LDA', b["R1"], b["C"], b["R1"], "Add %d" % b["C"])
+    else:
+        nodes[0].inst5 = ('LDA', b["R1"], - b["C"], b["R1"], "Subtract %d" % b["C"])
+    
     for n in nodes[1:]:
         n.remove()
     del block[offset+1:offset+len(nodes)-1]
     return block
 
-def mul_constant(block):
+def muldiv_constant(block):
     # 3: ST        1,-1(6)      * Store reg 1 on the stack
     # 4: LDA       6,-1(6)      * Move (push) the stack pointer
     # 5: LDC       1,-2(0)      * load constant: -2
@@ -166,7 +170,7 @@ def mul_constant(block):
                                      ('LDC', "$R1",  "$C", WILD),
                                      ('LD',  "$R2",     0, SP),
                                      ('LDA',    SP,     1, SP),
-                                     ('MUL', "$R1", "$R2", "$R1")])
+                                     ('(MUL|DIV)', "$R1", "$R2", "$R1")])
     if match is False:
         return False
 
@@ -176,6 +180,7 @@ def mul_constant(block):
     nodes[2].remove()
     nodes[3].remove()
     nodes[4].inst5 = ('LDC', b["R2"], b["C"], ZERO, 'Prepare multiply by %d' % b["C"])
+    nodes[5].inst5 = (nodes[5].inst, b["R1"], b["R1"], b["R2"], nodes[5].comment)
     del block[offset:offset + 3]
     return block
 
@@ -219,8 +224,8 @@ optimizations = [remove_dead_jumps,
                  times_two,
                  push_pop,
                  invert_sign,
-                 add_constant,
-                 mul_constant,
+                 addsub_constant,
+                 muldiv_constant,
                  remove_unnecessary_loads,
                  ]
 
@@ -260,7 +265,7 @@ if __name__ == '__main__':
     source = """
     
     """
-    source = open("examples/fib.9.txt").read()
+    source = open("test.9").read()
     
     print compile(source, False)
     print "-" * 80
