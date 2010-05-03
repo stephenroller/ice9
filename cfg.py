@@ -48,6 +48,10 @@ class CFGNode:
         
         return n
     
+    @property
+    def comment(self):
+        return self.inst5[4]
+    
     def index(self):
         c = 0
         n = self
@@ -123,7 +127,7 @@ def construct_CFG(code5):
 def yield_blocks(cfg):
     "Finds blocks in the given CFG. Yields lists of CFGNodes."
     # is_safe returns whether inst5 is safe in a block:
-    is_safe = lambda x: x.outlink is None and len(x.inlinks) == 0
+    is_safe = lambda x: x.outlink is None
     is_unsafe = lambda x: not is_safe(x)
     
     cfgiter = iter(cfg)
