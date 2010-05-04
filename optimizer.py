@@ -255,7 +255,7 @@ def remove_dead_jumps(cfg):
         if cfgnode.outlink is cfgnode.next and cfgnode.outlink is not None:
             cfgnode.remove()
             return True
-
+    return False
 
 def jump_based_on_boolean(cfg):
     # 3: JGT       1, 2(7)      * skip set to false
@@ -288,9 +288,9 @@ def jump_based_on_boolean(cfg):
     return True
 
 
-global_optimizations = [remove_dead_code, 
-                        remove_dead_jumps, 
+global_optimizations = [remove_dead_jumps, 
                         jump_based_on_boolean,
+                        remove_dead_code, 
                         ]
 
 # end optimizations ------------------------------------------------
@@ -301,6 +301,7 @@ def optimize(code5):
     
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
+    fix_jumps(cfg)
     
     optimizing = True
     while optimizing:
