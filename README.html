@@ -1,0 +1,274 @@
+<h1 id="project4readme">Project 4 README</h1>
+
+<h2 id="stephenroller">Stephen Roller</h2>
+
+<p><strong>I opt to use ice9 input for my program.</strong></p>
+
+<p><strong><em>Please run 'add python25' before running my program</em></strong></p>
+
+<p>My ice9 compiler runs with optimizations turned on by default. The -s flag
+(s for slow) can be passed to ice9 in order to specify optimizations should
+be turned off.</p>
+
+<p>For example:
+Optimizations on:</p>
+
+<pre><code>$ ./ice9 &lt; infile.9 &gt; outfile.tm
+</code></pre>
+
+<p>Optimizations off:</p>
+
+<pre><code>$ ./ice9 -s &lt; infile.9 &gt; outfile.tm
+</code></pre>
+
+<p>My unit tests may be run with:</p>
+
+<pre><code>$ python tests.py
+</code></pre>
+
+<hr />
+
+<h1 id="implementedoptimizations">Implemented Optimizations</h1>
+
+<h2 id="astleveloptimizations">AST Level Optimizations</h2>
+
+<h3 id="constantfolding">Constant Folding</h3>
+
+<p>some of the constant folding was performed here.</p>
+
+<pre><code>$ echo "writes 3 + 4;"  | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 7(0)        * load constant: 7
+    2: OUT       1, 0, 0        * writing int
+    3: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="identityoperations10etc">Identity operations (* 1, + 0, etc)</h3>
+
+<p>These were somewhat performed by tree transformations, but were also further 
+improved later on.</p>
+
+<pre><code>$ echo "writes read + 0;"  | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: IN        1, 0, 0        * Read input from command line.
+    2: OUT       1, 0, 0        * writing int
+    3: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="knownconditionals">Known conditionals</h3>
+
+<p>If statements are checked for true/false in their tests
+to see if the branch will <em>always</em> or <em>never</em> be taken.</p>
+
+<pre><code>$ echo "if true -&gt; writes 3; fi" | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 3(0)        * load constant: 3
+    2: OUT       1, 0, 0        * writing int
+    3: HALT      0, 0, 0        * END OF PROGRAM
+
+$ echo "if false -&gt; writes 3; fi" | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="staticstring-to-integerconversion">Static string-to-integer conversion</h3>
+
+<p>int(s : string) will be precomputed for
+any non-dynamic strings:</p>
+
+<pre><code>$ echo "writes int('3');" | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 3(0)        * load constant: 3
+    2: OUT       1, 0, 0        * writing int
+    3: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h2 id="peepholeoptimizations">Peephole Optimizations</h2>
+
+<p>I also wrote a number of peephole optimizations. All the patterns can be seen
+in optimizer.py, but here is a summary:</p>
+
+<h3 id="sequentialadds">Sequential adds</h3>
+
+<p>Similar to constant folding, this will take an LDC followed by an LDA or two 
+sequential LDAs and collapse them into just one operation. (See next example).</p>
+
+<h3 id="unnecessarypushespops">Unnecessary pushes/pops</h3>
+
+<p>Any pushes followed by pops will be removed. (This one is difficult to 
+demonstrate alone, but it is apparent when combined with constant folding).</p>
+
+<pre><code>$ echo 'var a : int; a := 3; a := a + 4; writes a;' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 7(1)        * load result: 7
+    2: ST        1, 1(0)        * STORE variable a
+    3: OUT       1, 0, 0        * writing int
+    4: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="strengthreduction">Strength reduction</h3>
+
+<p>Several operations, such as multiplying by 2 or -1, will be reduced to ADD 
+or SUB operations.</p>
+
+<pre><code>$ echo '-1 *  read;' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: IN        1, 0, 0        * Read input from command line.
+    2: SUB       1, 0, 1        * Invert sign.
+    3: HALT      0, 0, 0        * END OF PROGRAM
+
+$ echo '2 * read;' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: IN        1, 0, 0        * Read input from command line.
+    2: ADD       1, 1, 1        * A * 2
+    3: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="sequentialpopsorpushes">Sequential pops or pushes</h3>
+
+<p>Without optimization:</p>
+
+<pre><code>$ echo 'proc foo() write 2; end; foo();' | ice9 -s
+    ...
+    23: LD        5, 0(6)       * pop the frame pointer after call
+    24: LDA       6, 1(6)       * Move (pop) the stack pointer
+    25: LD        4, 0(6)       * remember registers from before proc call
+    26: LDA       6, 1(6)       * Move (pop) the stack pointer
+    27: LD        3, 0(6)       * remember registers from before proc call
+    28: LDA       6, 1(6)       * Move (pop) the stack pointer
+    29: LD        2, 0(6)       * remember registers from before proc call
+    30: LDA       6, 1(6)       * Move (pop) the stack pointer
+    ...
+</code></pre>
+
+<p>With optimization:</p>
+
+<pre><code>$ echo 'proc foo() write 2; end; foo();' | ice9
+
+    ...
+    11: ST        2,-1(6)       * save registers before proc call
+    12: ST        3,-2(6)       * save registers before proc call
+    13: ST        4,-3(6)       * save registers before proc call
+    14: ST        5,-4(6)       * store the frame pointer before the call
+    15: LDA       6,-4(6)       * Move (push) the stack pointer
+
+    ...
+
+    20: LD        5, 0(6)       * pop the frame pointer after call
+    21: LD        4, 1(6)       * remember registers from before proc call
+    22: LD        3, 2(6)       * remember registers from before proc call
+    23: LD        2, 3(6)       * remember registers from before proc call
+    24: LDA       6, 4(6)       * Move (pop) the stack pointer
+    ...
+</code></pre>
+
+<h2 id="otheroptimizations">Other Optimizations</h2>
+
+<h3 id="deadcoderemoval">Dead code removal</h3>
+
+<p>A depth-first search of the CFG is used to find dead code
+and eliminate it.</p>
+
+<p>Example 1: Removing an uncalled proc:</p>
+
+<pre><code>$ echo 'proc foo() write 2; end; write 4;' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 4(0)        * load constant: 4
+    2: OUT       1, 0, 0        * writing int
+    3: OUTNL     0, 0, 0        * newline for write
+    4: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<p>Example 2: Removing unreachable code:</p>
+
+<pre><code>$ echo 'write 1; exit; write 2;' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: LDC       1, 1(0)        * load constant: 1
+    2: OUT       1, 0, 0        * writing int
+    3: OUTNL     0, 0, 0        * newline for write
+    4: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h3 id="removedeadjumps">Remove dead jumps</h3>
+
+<p>Useless jumps, such as skipping proc definitions, are 
+ignored.</p>
+
+<p>Without optimization (Note instruction #1):</p>
+
+<pre><code>$ echo 'write 3;' | ice9 -s
+    *  PREAMBLE
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: JEQ       0, 0(7)        * skip proc definitions
+    *  END PREAMBLE
+    *  START OF PROGRAM
+    2: LDC       1, 3(0)        * load constant: 3
+    3: OUT       1, 0, 0        * writing int
+    4: OUTNL     0, 0, 0        * newline for write
+    5: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<p>With optimization:</p>
+
+<pre><code>    $ echo 'write 3;' | ice9 
+        0: LD        6, 0(0)        * Set the stack pointer
+        1: LDC       1, 3(0)        * load constant: 3
+        2: OUT       1, 0, 0        * writing int
+        3: OUTNL     0, 0, 0        * newline for write
+        4: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<p>Boolean conditional jumps: Optimized a special cases of the form if (y > x),
+where AC1 would normally be explicitly set to 0 or 1, and then JEQ'd.</p>
+
+<p>Without optimization (note instructions #8-13)</p>
+
+<pre><code>$ echo 'if (read &gt; 3) -&gt; write 4; fi' | ice9 -s
+     0: LD        6, 0(0)       * Set the stack pointer
+     1: JEQ       0, 0(7)       * skip proc definitions
+     2: IN        1, 0, 0       * Read input from command line.
+     3: ST        1,-1(6)       * Store reg 1 on the stack
+     4: LDA       6,-1(6)       * Move (push) the stack pointer
+     5: LDC       1, 3(0)       * load constant: 3
+     6: LD        2, 0(6)       * Get reg 2 off the stack
+     7: LDA       6, 1(6)       * Move (pop) the stack pointer
+     8: SUB       1, 2, 1       * SUB left and right.
+     9: JGT       1, 2(7)       * skip set to false
+    10: LDC       1, 0(0)       * comparison is bad, set reg 1 to false
+    11: JEQ       0, 1(7)       * skip set to true
+    12: LDC       1, 1(0)       * compairson is good, set reg 1 to true
+    13: JEQ       1, 4(7)       * if false, jump to next cond
+    14: LDC       1, 4(0)       * load constant: 4
+    15: OUT       1, 0, 0       * writing int
+    16: OUTNL     0, 0, 0       * newline for write
+    17: JEQ       0, 0(7)       * jump to end of if-then-else
+    18: HALT      0, 0, 0       * END OF PROGRAM
+</code></pre>
+
+<p>With optimization (Note instructions #2-3):</p>
+
+<pre><code>$ echo 'if (read &gt; 3) -&gt; write 4; fi' | ice9
+    0: LD        6, 0(0)        * Set the stack pointer
+    1: IN        1, 0, 0        * Read input from command line.
+    2: LDA       1,-3(1)        * Subtract 3
+    3: JLE       1, 3(7)        * if false, jump to next cond
+    4: LDC       1, 4(0)        * load constant: 4
+    5: OUT       1, 0, 0        * writing int
+    6: OUTNL     0, 0, 0        * newline for write
+    7: HALT      0, 0, 0        * END OF PROGRAM
+</code></pre>
+
+<h2 id="overallresults">Overall results</h2>
+
+<pre><code>File         # Instrs Unopt  # Instrs Opt  % Change
+--------     --------------  ------------  --------
+bsort.9           398            340          14.6%
+dice.9            248            183          26.2%
+fact.9            168            107          36.3%
+fib.9             196            123          37.2%
+ifact.9           135             97          28.1%
+sieve.9           310            251          19.0%
+sticks.9          876            556          36.5%
+---------------------------------------------------
+Total            2331           1657          28.9%
+</code></pre>
