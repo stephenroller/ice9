@@ -29,6 +29,7 @@ def make_community_test(test_id):
     else:
         inputtext = ""
         
+    source = "# test #%d\n" % test_id + source
     return make_compile_test(source, expected, inputtext)
     
 
