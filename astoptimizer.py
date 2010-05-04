@@ -114,15 +114,14 @@ def remove_arithmetic_identities(ast):
             # Neither must be a literal.
             continue
         
-        if node.value in ('+', '-') and literal.value == 0:
-            if node.value == '+' or right.value == 0:
+        if node.value in ('+', '-'):
+            if right.value == 0:
                 node.children = [dynamic]
                 node.become_child()
             elif node.value == '-' and left.value == 0:
                 node.children = [dynamic]
-            elif node.value == '+':
-                # reorder for easy peephole optimization later
-                node.children [dynamic, literal]
+            elif node.value == '+' and literal == left:
+                node.children = [dynamic, literal]
         elif node.value == '*':
             if literal.value == 0:
                 node.children = [literal]
@@ -152,18 +151,3 @@ def optimize_ast(ast):
     constant_propagation(ast)
     cond_elimination(ast)
 
-
-if __name__ == '__main__':
-    from ice9 import compile
-
-
-    source = """
-    if read > 3 ->
-    write read * 1;
-    fi
-    """
-
-    print compile(source, False)
-    print "-" * 80
-    print
-    print compile(source, True)    

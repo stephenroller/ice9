@@ -184,6 +184,34 @@ def push_pop(nodes, A):
         n.remove()
 
 
+@optimization([('ST', "$R", "$O", "$M"),
+               ('ST', "$R", "$O", "$M")])
+def unnecessary_stores1(window, R, O, M):
+    window[0].remove()
+
+@optimization([('ST', "$R", "$O", "$M"),
+               (WILD, "$R", WILD, WILD),
+               ('ST', "$R", "$O", "$M")])
+def unnecessary_stores2(window, R, O, M):
+    window[0].remove()
+
+@optimization([('LDC', "$R", "$A", WILD),
+               ('LDA', "$R", "$B", "$R")])
+def add_to_constant(window, R, A, B):
+    window[0].remove()
+    window[1].inst5 = ('LDC', R, A + B, R, 'load result: %d' % (A + B))
+    
+
+@optimization([('LDA', "$R", "$A", "$R"),
+               ('LDA', "$R", "$B", "$R")])
+def double_add(window, R, A, B):
+    window[0].remove()
+    window[1].inst5 = ('LDA', R, A + B, R, 'Add %d' % (A + B))
+
+@optimization([('LDA', "$R", 0, "$R")])
+def add_zero(window, R):
+    window[0].remove()
+
 optimizations = [sequential_pushes,
                  sequential_pops,
                  times_two,
@@ -191,7 +219,12 @@ optimizations = [sequential_pushes,
                  invert_sign,
                  addsub_constant,
                  muldiv_constant,
+                 double_add,
+                 add_zero,
                  remove_unnecessary_loads,
+                 unnecessary_stores1,
+                 unnecessary_stores2,
+                 add_to_constant,
                  ]
 
 # global optimizations ---------------------------------------------------
@@ -210,15 +243,18 @@ def _paint_visited(node):
 
 def remove_dead_code(cfg):
     _paint_visited(cfg)
+    retval = False
     for n in cfg:
         if not hasattr(n, '_painted'):
             n.remove()
-
+            retval = True
+    return retval
 
 def remove_dead_jumps(cfg):
     for cfgnode in cfg:
         if cfgnode.outlink is cfgnode.next and cfgnode.outlink is not None:
             cfgnode.remove()
+            return True
 
 
 def jump_based_on_boolean(cfg):
@@ -248,8 +284,8 @@ def jump_based_on_boolean(cfg):
         nodes[-1].inst5 = (nodes[-1].inst, b["R1"], b["A"], b["B"], nodes[-1].comment)
     for n in nodes[:-1]:
         n.remove()
-    del block[offset:offset + 4]
-    return block
+    
+    return True
 
 
 global_optimizations = [remove_dead_code, 
@@ -266,9 +302,16 @@ def optimize(code5):
     # now we need to make the control flow diagram
     cfg = construct_CFG(code5)
     
-    for opt in global_optimizations:
-        opt(cfg)
-        fix_jumps(cfg)
+    optimizing = True
+    while optimizing:
+        optimizing = False
+        for opt in global_optimizations:
+            if opt(cfg):
+                optimizing = True
+                fix_jumps(cfg)
+        if not optimizing:
+            break
+        
     
     # and finally we begin running some optimizations
     for block in yield_blocks(cfg):

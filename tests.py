@@ -424,8 +424,8 @@ test_div_const = make_compile_test(
 )
 
 
-# for i in xrange(1, 258):
-#     globals()["community_test%d" % i] = make_community_test(i)
+for i in xrange(1, 258):
+    globals()["community_test%d" % i] = make_community_test(i)
 
 if __name__ == '__main__':
     unittest.main()
