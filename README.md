@@ -9,12 +9,11 @@ My ice9 compiler runs with optimizations turned on by default. The -s flag
 (s for slow) can be passed to ice9 in order to specify optimizations should
 be turned off.
 
-For example:
 Optimizations on:
 
     $ ./ice9 < infile.9 > outfile.tm
 
-Optimizations off:
+Optimizations **off**:
 
     $ ./ice9 -s < infile.9 > outfile.tm
 
@@ -22,6 +21,9 @@ Optimizations off:
 My unit tests may be run with:
 
     $ python tests.py
+
+and you may view them in in the tests.py. Each unit tests is run optimized
+and unoptimized to ensure both outputs match the target.
 
 -----------------------------------------------------------------------------
 
@@ -32,7 +34,7 @@ AST Level Optimizations
 -----------------------
 
 ### Constant Folding
- some of the constant folding was performed here.
+Most of the constant folding was performed at the AST level (astoptimizer.py).
 
     $ echo "writes 3 + 4;"  | ice9
         0: LD        6, 0(0)        * Set the stack pointer
@@ -51,8 +53,8 @@ improved later on.
         3: HALT      0, 0, 0        * END OF PROGRAM
 
 ### Known conditionals
-If statements are checked for true/false in their tests
-to see if the branch will *always* or *never* be taken.
+If statements are checked for true/false in their tests to see if the branch
+will *always* or *never* be taken.
 
     $ echo "if true -> writes 3; fi" | ice9
         0: LD        6, 0(0)        * Set the stack pointer
@@ -65,8 +67,7 @@ to see if the branch will *always* or *never* be taken.
         1: HALT      0, 0, 0        * END OF PROGRAM
 
 ### Static string-to-integer conversion
- int(s : string) will be precomputed for
-any non-dynamic strings:
+int(s : string) will be precomputed for any non-dynamic strings:
 
     $ echo "writes int('3');" | ice9
         0: LD        6, 0(0)        * Set the stack pointer
@@ -116,6 +117,15 @@ Without optimization:
 
     $ echo 'proc foo() write 2; end; foo();' | ice9 -s
         ...
+        11: ST        2,-1(6)       * save registers before proc call
+        12: LDA       6,-1(6)       * Move (push) the stack pointer
+        13: ST        3,-1(6)       * save registers before proc call
+        14: LDA       6,-1(6)       * Move (push) the stack pointer
+        15: ST        4,-1(6)       * save registers before proc call
+        16: LDA       6,-1(6)       * Move (push) the stack pointer
+        17: ST        5,-1(6)       * store the frame pointer before the call
+        18: LDA       6,-1(6)       * Move (push) the stack pointer
+        ...
         23: LD        5, 0(6)       * pop the frame pointer after call
         24: LDA       6, 1(6)       * Move (pop) the stack pointer
         25: LD        4, 0(6)       * remember registers from before proc call
@@ -129,16 +139,13 @@ Without optimization:
 With optimization:
 
     $ echo 'proc foo() write 2; end; foo();' | ice9
-    
         ...
         11: ST        2,-1(6)       * save registers before proc call
         12: ST        3,-2(6)       * save registers before proc call
         13: ST        4,-3(6)       * save registers before proc call
         14: ST        5,-4(6)       * store the frame pointer before the call
         15: LDA       6,-4(6)       * Move (push) the stack pointer
-        
         ...
-        
         20: LD        5, 0(6)       * pop the frame pointer after call
         21: LD        4, 1(6)       * remember registers from before proc call
         22: LD        3, 2(6)       * remember registers from before proc call
@@ -172,8 +179,7 @@ Example 2: Removing unreachable code:
         4: HALT      0, 0, 0        * END OF PROGRAM
 
 ### Remove dead jumps
- Useless jumps, such as skipping proc definitions, are 
-ignored.
+Useless jumps (like skipping empty proc definitions) are removed.
 
 Without optimization (Note instruction #1):
 
@@ -197,8 +203,9 @@ With optimization:
             3: OUTNL     0, 0, 0        * newline for write
             4: HALT      0, 0, 0        * END OF PROGRAM
 
-Boolean conditional jumps: Optimized a special cases of the form if (y > x),
-where AC1 would normally be explicitly set to 0 or 1, and then JEQ'd.
+### Boolean conditional jumps
+A special cases of the form __if (y > x) ->__, where AC1 would normally be
+explicitly set to 0 or 1, and then JEQ'd.
 
 Without optimization (note instructions #8-13)
 
@@ -211,12 +218,14 @@ Without optimization (note instructions #8-13)
          5: LDC       1, 3(0)       * load constant: 3
          6: LD        2, 0(6)       * Get reg 2 off the stack
          7: LDA       6, 1(6)       * Move (pop) the stack pointer
+
          8: SUB       1, 2, 1       * SUB left and right.
          9: JGT       1, 2(7)       * skip set to false
         10: LDC       1, 0(0)       * comparison is bad, set reg 1 to false
         11: JEQ       0, 1(7)       * skip set to true
         12: LDC       1, 1(0)       * compairson is good, set reg 1 to true
         13: JEQ       1, 4(7)       * if false, jump to next cond
+
         14: LDC       1, 4(0)       * load constant: 4
         15: OUT       1, 0, 0       * writing int
         16: OUTNL     0, 0, 0       * newline for write
@@ -228,8 +237,10 @@ With optimization (Note instructions #2-3):
     $ echo 'if (read > 3) -> write 4; fi' | ice9
         0: LD        6, 0(0)        * Set the stack pointer
         1: IN        1, 0, 0        * Read input from command line.
+
         2: LDA       1,-3(1)        * Subtract 3
         3: JLE       1, 3(7)        * if false, jump to next cond
+
         4: LDC       1, 4(0)        * load constant: 4
         5: OUT       1, 0, 0        * writing int
         6: OUTNL     0, 0, 0        * newline for write
@@ -250,3 +261,17 @@ Overall results
     ---------------------------------------------------
     Total            2331           1657          28.9%
 
+Limitations & Unimplemented
+---------------------------
+Sometimes my optimizer is over-eager and will optimize out side-effect
+operations. In this example, the read operation is optimized out, so the
+user is never prompted at all:
+
+    $ echo '0 * read;' | ice9
+        0: LD        6, 0(0)        * Set the stack pointer
+        1: LDC       1, 0(0)        * load constant: 0
+        2: HALT      0, 0, 0        * END OF PROGRAM
+
+I did not optimize array references or jump chaining. I ran out of time to
+do array references and I had difficulty creating trivial examples of jump
+chaining.
