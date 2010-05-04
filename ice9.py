@@ -35,6 +35,18 @@ def main(*args):
     from lexer import Ice9LexicalError
     from semantic import Ice9SemanticError
     
+    optimize = True
+    for i, a in enumerate(args):
+        if a == '-o':
+            optimize = True
+            args = args[:i] + args[i+1:]
+            break
+        elif a == '-s':
+            optimize = False
+            args = args[:i] + args[i+1:]
+            break
+    
+    
     if len(args) == 0:
         sourcefile = sys.stdin
         outfile = sys.stdout
@@ -49,7 +61,7 @@ def main(*args):
     
     try:
         # try to parse the source and exit cleanly
-        compiled = compile(source)
+        compiled = compile(source, optimize)
         outfile.write(compiled)
         outfile.close()
         sys.exit(0)
